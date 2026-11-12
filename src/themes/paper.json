@@ -1,0 +1,21 @@
+{
+  "name": "Paper",
+  "author": "kai",
+  "description": "A light, airy dock for bright wallpapers.",
+  "view": "floating",
+  "background": "#f4f1ea",
+  "backgroundOpacity": 0.88,
+  "border": "#000000",
+  "borderOpacity": 0.12,
+  "borderWidth": 1,
+  "radius": 16,
+  "padding": 9,
+  "spacing": 7,
+  "gloss": 0.0,
+  "indicator": "dot",
+  "indicatorColor": "#2b2b2b",
+  "labelBackground": "#f4f1ea",
+  "labelColor": "#1a1a1a",
+  "textColor": "#1a1a1a",
+  "iconShadow": 0.25
+}

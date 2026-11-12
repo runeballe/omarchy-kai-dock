@@ -1,0 +1,23 @@
+{
+  "name": "3D Plane",
+  "author": "kai",
+  "description": "Icons stand on a glassy plane that recedes into the screen.",
+  "view": "plane",
+  "background": "#8a8fa8",
+  "background2": "#20222e",
+  "backgroundOpacity": 0.55,
+  "border": "#ffffff",
+  "borderOpacity": 0.45,
+  "borderWidth": 1,
+  "radius": 0,
+  "padding": 6,
+  "spacing": 10,
+  "gloss": 0.25,
+  "reflection": 0.35,
+  "planeAngle": 60,
+  "indicator": "glow",
+  "indicatorColor": "accent",
+  "labelBackground": "#000000",
+  "labelOpacity": 0.75,
+  "iconShadow": 0.3
+}

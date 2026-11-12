@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=kai
+GenericName=Dock
+GenericName[no]=Dokk
+Comment=A dock with zoom, themes, applets and desklets
+Comment[no]=En dokk med zoom, temaer, appleter og skrivebordswidgeter
+Exec=kai
+Icon=kai
+Terminal=false
+Categories=Utility;
+Keywords=dock;panel;launcher;taskbar;
+StartupWMClass=kai

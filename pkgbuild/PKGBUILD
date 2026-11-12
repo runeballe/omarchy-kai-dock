@@ -1,0 +1,26 @@
+pkgname=kai
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='A Cairo-Dock-style dock for Hyprland, with zoom, themes, applets and desklets'
+arch=('x86_64' 'aarch64')
+license=('MIT')
+depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'qt6-svg' 'layer-shell-qt')
+optdepends=('hyprland: running-app indicators and window switching'
+            'uwsm: launching apps in their own scope'
+            'btop: opened by the system monitor applet')
+makedepends=('gcc' 'make')
+source=()
+sha256sums=()
+
+build() {
+  cd "$startdir/.."
+  ./bin/build
+}
+
+package() {
+  cd "$startdir/.."
+  install -Dm755 build/kai "$pkgdir/usr/bin/kai"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 "$startdir/kai.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/kai.svg"
+  install -Dm644 "$startdir/kai.desktop" "$pkgdir/usr/share/applications/kai.desktop"
+}

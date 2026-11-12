@@ -1,0 +1,18 @@
+{
+  "name": "Minimal",
+  "author": "kai",
+  "description": "No shelf at all — just floating icons.",
+  "view": "floating",
+  "background": "#000000",
+  "backgroundOpacity": 0.0,
+  "borderOpacity": 0.0,
+  "borderWidth": 0,
+  "radius": 0,
+  "padding": 4,
+  "spacing": 10,
+  "indicator": "dot",
+  "indicatorColor": "accent",
+  "labelBackground": "#000000",
+  "labelOpacity": 0.7,
+  "iconShadow": 0.5
+}

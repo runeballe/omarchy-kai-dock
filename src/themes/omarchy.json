@@ -1,0 +1,18 @@
+{
+  "name": "Omarchy",
+  "author": "kai",
+  "description": "Follows the Omarchy accent and Hyprland's rounding. Quiet and flat.",
+  "view": "floating",
+  "background": "#121215",
+  "backgroundOpacity": 0.86,
+  "border": "accent",
+  "borderOpacity": 0.35,
+  "borderWidth": 1,
+  "radius": -1,
+  "padding": 8,
+  "spacing": 6,
+  "indicator": "dot",
+  "indicatorColor": "accent",
+  "labelBackground": "#121215",
+  "labelColor": "#ffffff"
+}

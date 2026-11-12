@@ -1,0 +1,17 @@
+{
+  "name": "Panel",
+  "author": "kai",
+  "description": "A full-width bar along the edge, like a taskbar.",
+  "view": "panel",
+  "background": "#0d0d10",
+  "backgroundOpacity": 0.94,
+  "border": "#ffffff",
+  "borderOpacity": 0.06,
+  "borderWidth": 1,
+  "radius": 0,
+  "padding": 6,
+  "spacing": 4,
+  "indicator": "bar",
+  "indicatorColor": "accent",
+  "labelBackground": "#0d0d10"
+}

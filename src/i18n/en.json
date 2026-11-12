@@ -1,0 +1,5 @@
+{
+  "Permanently delete %n item(s)": { "one": "Permanently delete %n item", "other": "Permanently delete %n items" },
+  "Trash — %n item(s)": { "one": "Trash — %n item", "other": "Trash — %n items" },
+  "%n setting(s) changed from the theme.": { "one": "%n setting changed from the theme.", "other": "%n settings changed from the theme." }
+}

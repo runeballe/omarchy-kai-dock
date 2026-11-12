@@ -1,0 +1,22 @@
+{
+  "name": "Glass",
+  "author": "kai",
+  "description": "A frosted, rounded shelf with a soft gloss and reflections.",
+  "view": "floating",
+  "background": "#3a3a48",
+  "background2": "#1b1b24",
+  "backgroundOpacity": 0.62,
+  "border": "#ffffff",
+  "borderOpacity": 0.22,
+  "borderWidth": 1,
+  "radius": 20,
+  "padding": 10,
+  "spacing": 8,
+  "gloss": 0.18,
+  "reflection": 0.28,
+  "indicator": "glow",
+  "indicatorColor": "#ffffff",
+  "labelBackground": "#000000",
+  "labelOpacity": 0.7,
+  "iconShadow": 0.35
+}

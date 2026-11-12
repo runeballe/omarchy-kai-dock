@@ -1,0 +1,21 @@
+{
+  "name": "Neon",
+  "author": "kai",
+  "description": "Deep black with a glowing accent edge.",
+  "view": "floating",
+  "background": "#050507",
+  "background2": "#120a1e",
+  "backgroundOpacity": 0.9,
+  "border": "accent",
+  "borderOpacity": 0.9,
+  "borderWidth": 2,
+  "radius": 14,
+  "padding": 9,
+  "spacing": 7,
+  "gloss": 0.05,
+  "reflection": 0.15,
+  "indicator": "glow",
+  "indicatorColor": "accent",
+  "labelBackground": "#050507",
+  "labelColor": "accent"
+}
