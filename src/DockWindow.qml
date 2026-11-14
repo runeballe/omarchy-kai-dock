@@ -286,7 +286,12 @@ Window {
                 }
                 win.hoverU = logical(mouse.x)
                 win.zoomAmount = 1
-                win.hoveredIndex = indexAt(mouse.x)
+                const i = indexAt(mouse.x)
+                if (i !== win.hoveredIndex) {
+                    const d = i >= 0 ? items.itemAt(i) : null
+                    if (d && d.kind !== "separator" && !win.dragging) d.playHover()
+                    win.hoveredIndex = i
+                }
             }
             onEntered: win.zoomAmount = 1
             onExited: {

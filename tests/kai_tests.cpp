@@ -4,8 +4,11 @@
 #include <QJsonObject>
 #include <QTemporaryDir>
 #include <QQmlComponent>
+#include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickItem>
+#include <QQuickWindow>
+#include <QtQuick>
 #include <QtTest>
 #include <memory>
 
@@ -30,6 +33,60 @@ class MenuAppStub : public QObject {
 public:
     Q_PROPERTY(double radius READ radius CONSTANT)
     double radius() const { return 8; }
+};
+
+// Stand-ins for the dock window and app singletons DockItem reads.
+class ItemDockStub : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(QVariant v READ v CONSTANT)
+    Q_PROPERTY(QVariant t READ t CONSTANT)
+    Q_PROPERTY(QVariant geom READ geom CONSTANT)
+    Q_PROPERTY(double s READ s CONSTANT)
+    Q_PROPERTY(double iconBase READ iconBase CONSTANT)
+    Q_PROPERTY(double frameRotation READ frameRotation CONSTANT)
+    Q_PROPERTY(double zoomFactor READ zoomFactor CONSTANT)
+    Q_PROPERTY(double speed READ speed CONSTANT)
+    Q_PROPERTY(double gap READ gap CONSTANT)
+    Q_PROPERTY(double pad READ pad CONSTANT)
+    Q_PROPERTY(bool panel READ panel CONSTANT)
+    Q_PROPERTY(bool dragging READ dragging CONSTANT)
+    Q_PROPERTY(int dragIndex READ dragIndex CONSTANT)
+public:
+    explicit ItemDockStub(const QString &hover, QObject *parent = nullptr) : QObject(parent), m_hover(hover) {}
+    QVariant v() const { return QVariantMap{{"hoverAnimation", m_hover}}; }
+    QVariant t() const { return QVariantMap{}; }
+    QVariant geom() const {
+        return QVariantMap{{"u", QVariantList{0.0}}, {"w", QVariantList{48.0}},
+                           {"scale", QVariantList{1.0}}, {"start", 0.0}, {"length", 48.0}, {"maxScale", 1.0}};
+    }
+    double s() const { return 48; }
+    double iconBase() const { return 10; }
+    double frameRotation() const { return 0; }
+    double zoomFactor() const { return 1; }
+    double speed() const { return 1; }
+    double gap() const { return 4; }
+    double pad() const { return 8; }
+    bool panel() const { return false; }
+    bool dragging() const { return false; }
+    int dragIndex() const { return -1; }
+    Q_INVOKABLE double frameX(double u, double) const { return u; }
+private:
+    QString m_hover;
+};
+
+class ItemAppStub : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(QString accent READ accent CONSTANT)
+    Q_PROPERTY(int radius READ radius CONSTANT)
+    Q_PROPERTY(bool fancy READ fancy CONSTANT)
+public:
+    QString accent() const { return "#FFD60A"; }
+    int radius() const { return 8; }
+    bool fancy() const { return false; }
+    Q_INVOKABLE QString color(const QString &value, const QString &fallback) const {
+        return value.isEmpty() ? fallback : value;
+    }
+    Q_INVOKABLE QString withAlpha(const QString &color, double) const { return color; }
 };
 
 class KaiTests : public QObject {
@@ -216,6 +273,75 @@ private slots:
         }
         Config again(dir.filePath("cfg"), dir.filePath("data"));
         QCOMPARE(again.get("hoverAnimation").toString(), QString("flip"));
+    }
+
+private:
+    QQuickItem *loadDockItem(QObject *dock, QObject *app, bool launching) {
+        QQmlComponent component(&engine, QUrl("qrc:/DockItem.qml"));
+        QObject *raw = component.beginCreate(engine.rootContext());
+        component.setInitialProperties(raw, {
+            {"dock", QVariant::fromValue(dock)},
+            {"app", QVariant::fromValue(app)},
+            {"index", 0},
+            {"kind", "app"},
+            {"appId", "test.app"},
+            {"name", "Test"},
+            {"icon", "test-app"},
+            {"appletId", ""},
+            {"pinned", false},
+            {"running", false},
+            {"windowCount", 0},
+            {"active", false},
+            {"urgent", false},
+            {"launching", launching},
+        });
+        auto *item = qobject_cast<QQuickItem *>(raw);
+        if (item)
+            item->setParentItem(harnessWindow->contentItem());
+        component.completeCreate();
+        if (component.isError() || !item) {
+            m_loadError = component.errorString();
+            return nullptr;
+        }
+        return item;
+    }
+
+    QQuickWindow *harnessWindow = nullptr;
+    QQmlEngine engine;
+    QString m_loadError;
+
+private slots:
+    void init() {
+        if (!harnessWindow) {
+            engine.rootContext()->setContextProperty("dockModel", new QObject(this));  // Connections target only
+            harnessWindow = new QQuickWindow;
+            harnessWindow->resize(240, 240);
+            harnessWindow->create();
+        }
+    }
+    void cleanup() {
+        for (auto *item : harnessWindow->contentItem()->findChildren<QQuickItem *>())
+            delete item;
+    }
+
+    void dockItemHoverPlaysOnce() {
+        ItemDockStub dock("bounce");
+        ItemAppStub appStub;
+        QQuickItem *item = loadDockItem(&dock, &appStub, false);
+        QVERIFY2(item, qPrintable(m_loadError));
+        QMetaObject::invokeMethod(item, "playHover");
+        QTest::qWait(300);  // mid-flight: the bounce peaks at 230 * speed ms
+        QVERIFY2(item->property("bounce").toDouble() > 0, "hover did not start the bounce animation");
+    }
+
+    void dockItemHoverRespectsLoopState() {
+        ItemDockStub dock("bounce");
+        ItemAppStub appStub;
+        QQuickItem *item = loadDockItem(&dock, &appStub, true);  // launching → loop state "launch"
+        QVERIFY2(item, qPrintable(m_loadError));
+        QMetaObject::invokeMethod(item, "playHover");
+        QTest::qWait(300);
+        QCOMPARE(item->property("bounce").toDouble(), 0.0);
     }
 
     void dockMenuEntriesRenderTheirText() {
