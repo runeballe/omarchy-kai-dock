@@ -95,11 +95,16 @@ class CalDockStub : public QObject {
     Q_PROPERTY(double width READ width CONSTANT)
     Q_PROPERTY(double height READ height CONSTANT)
     Q_PROPERTY(QString edge READ edge CONSTANT)
+    Q_PROPERTY(QVariant t READ t CONSTANT)
 public:
+    explicit CalDockStub(QVariant t = {}, QObject *parent = nullptr) : QObject(parent), m_t(std::move(t)) {}
     double width() const { return 1920; }
     double height() const { return 400; }
     QString edge() const { return "bottom"; }
+    QVariant t() const { return m_t; }
     Q_INVOKABLE QPointF anchorFor(int, double) const { return QPointF(960, 350); }
+private:
+    QVariant m_t;
 };
 
 // Counts calls from ClockApplet.activate in dock mode.
@@ -324,12 +329,41 @@ private slots:
         clockConfig->set("clockSeconds", true);
     }
 
+    // A dock session can run for weeks: reopening the popup must land on the
+    // current month with today freshly stamped, not the startup state.
+    void calendarPopupReopensOnCurrentMonth() {
+        ItemAppStub appStub;
+        CalDockStub dockStub;
+        lastPopupWindow = new QQuickWindow;
+        lastPopupWindow->resize(400, 400);
+        lastPopupWindow->create();
+        lastPopupWindow->show();
+        QVariantMap props{{"app", QVariant::fromValue(&appStub)},
+                          {"dock", QVariant::fromValue(&dockStub)},
+                          {"parent", QVariant::fromValue(lastPopupWindow->contentItem())}};
+        QQmlComponent component(&engine, QUrl("qrc:/CalendarPopup.qml"));
+        QObject *popup = component.createWithInitialProperties(props);
+        QVERIFY2(popup && !component.isError(), qPrintable(component.errorString()));
+        lastPopup = popup;
+        QMetaObject::invokeMethod(popup, "shift", Q_ARG(QVariant, -3));  // months passed since startup
+        QMetaObject::invokeMethod(popup, "openFor", Q_ARG(QVariant, 0));
+        QCOMPARE(popup->property("monthLabel").toString(),
+                 QLocale().toString(QDate::currentDate(), "MMMM yyyy"));
+        QCOMPARE(popup->property("today").toDate(), QDate::currentDate());
+    }
+
+    // Calendar tests get their own window: popups and the shared harness
+    // window interfere with each other's render state.
     void calendarPopupShowsMonthAndNavigates() {
         ItemAppStub appStub;
         CalDockStub dockStub;
+        lastPopupWindow = new QQuickWindow;
+        lastPopupWindow->resize(400, 400);
+        lastPopupWindow->create();
+        lastPopupWindow->show();
         QVariantMap props{{"app", QVariant::fromValue(&appStub)},
                           {"dock", QVariant::fromValue(&dockStub)},
-                          {"parent", QVariant::fromValue(harnessWindow->contentItem())}};
+                          {"parent", QVariant::fromValue(lastPopupWindow->contentItem())}};
         QQmlComponent component(&engine, QUrl("qrc:/CalendarPopup.qml"));
         QObject *popup = component.createWithInitialProperties(props);
         QVERIFY2(popup && !component.isError(), qPrintable(component.errorString()));
@@ -349,6 +383,57 @@ private slots:
         const QString after = popup->property("monthLabel").toString();
         QMetaObject::invokeMethod(popup, "shift", Q_ARG(QVariant, -2));
         QVERIFY(popup->property("monthLabel").toString() != after);
+    }
+
+    // The popup's palette must follow the active theme, not hard-coded glass.
+    void calendarPopupFollowsThemeTokens() {
+        ItemAppStub appStub;
+        QVariantMap t{{"background", "#112233"}, {"background2", ""}, {"backgroundOpacity", 0.5},
+                      {"border", "#ffffff"}, {"borderOpacity", 0.2}, {"textColor", "#ff0000"}};
+        CalDockStub dockStub(t);
+        lastPopupWindow = new QQuickWindow;
+        lastPopupWindow->resize(400, 400);
+        lastPopupWindow->create();
+        lastPopupWindow->show();
+        QVariantMap props{{"app", QVariant::fromValue(&appStub)},
+                          {"dock", QVariant::fromValue(&dockStub)},
+                          {"parent", QVariant::fromValue(lastPopupWindow->contentItem())}};
+        QQmlComponent component(&engine, QUrl("qrc:/CalendarPopup.qml"));
+        QObject *popup = component.createWithInitialProperties(props);
+        QVERIFY2(popup && !component.isError(), qPrintable(component.errorString()));
+        lastPopup = popup;
+        auto *bg = qobject_cast<QQuickItem *>(popup->property("background").value<QObject *>());
+        QVERIFY2(bg && bg->objectName() == "calBackground",
+                 qPrintable(QString("bg class=%1 objectName=%2").arg(bg ? bg->metaObject()->className() : "null").arg(bg ? bg->objectName() : "-")));
+        const QVariantMap tp = popup->property("t").toMap();
+        QVERIFY2(!tp.isEmpty() && tp.value("background").toString() == "#112233",
+                 qPrintable("t=" + QString(QJsonDocument(QJsonObject::fromVariantMap(tp)).toJson())));
+        const QColor background = bg->property("color").value<QColor>();
+        QVERIFY2(background.red() == 0x11 && background.green() == 0x22 && background.blue() == 0x33,
+                 qPrintable(QString("red=%1 name=%2 ready=%3 t=%4 dockType=%5")
+                                .arg(background.red()).arg(background.name(QColor::HexArgb))
+                                .arg(popup->property("ready").toString())
+                                .arg(QString(QJsonDocument(QJsonObject::fromVariantMap(popup->property("t").toMap())).toJson()))
+                                .arg(popup->property("dock").typeName() ? popup->property("dock").typeName() : "null")));
+        QVERIFY2(background.green() == 0x22, qPrintable(QString("green=%1").arg(background.green())));
+        QVERIFY2(background.blue() == 0x33, qPrintable(QString("blue=%1").arg(background.blue())));
+        QVERIFY2(qAbs(background.alphaF() - 0.5) < 0.01, qPrintable(background.name(QColor::HexArgb)));
+        const QVariant borderVar = bg->property("border");
+        QObject *pen = borderVar.value<QObject *>();
+        QVERIFY2(pen, "border pen not found");
+        const QColor borderColor = pen->property("color").value<QColor>();
+        QCOMPARE(borderColor.red(), 255);
+        QCOMPARE(borderColor.green(), 255);
+        QCOMPARE(borderColor.blue(), 255);
+        QVERIFY2(qAbs(borderColor.alphaF() - 0.2) < 0.01, qPrintable(borderColor.name(QColor::HexArgb)));
+        QQuickItem *label = nullptr;
+        QQuickItem *content = qobject_cast<QQuickItem *>(popup->property("contentItem").value<QObject *>());
+        QVERIFY(content);
+        for (auto *kid : content->findChildren<QQuickItem *>())
+            if (kid->objectName() == "calMonthLabel")
+                label = kid;
+        QVERIFY2(label, "month label not found");
+        QCOMPARE(label->property("color").value<QColor>(), QColor("#ff0000"));
     }
 
     void clockClickOpensCalendarPopupInDockMode() {
@@ -483,6 +568,7 @@ private:
     }
 
     QQuickWindow *harnessWindow = nullptr;
+    QQuickWindow *lastPopupWindow = nullptr;
     QQmlEngine engine;
     QString m_loadError;
     QTemporaryDir clockCfgDir;
@@ -514,7 +600,14 @@ private slots:
             delete lastPopup;
             lastPopup = nullptr;
         }
-        for (auto *item : harnessWindow->contentItem()->findChildren<QQuickItem *>())
+        if (lastPopupWindow) {
+            delete lastPopupWindow;
+            lastPopupWindow = nullptr;
+        }
+        // Visual children are not QObject children, so sweep childItems, not
+        // findChildren (which would miss them and could double-delete).
+        const auto kids = harnessWindow->contentItem()->childItems();
+        for (auto *item : kids)
             delete item;
     }
 

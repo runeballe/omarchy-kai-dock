@@ -173,7 +173,7 @@ Window {
     property int hoveredIndex: -1
     property bool dragging: false
     property int dragIndex: -1
-    readonly property bool hovered: band.containsMouse || menuOpen || dragging || band.pressed
+    readonly property bool hovered: band.containsMouse || menuOpen || popupOpen || dragging || band.pressed
     property bool hiddenState: false
     readonly property real hideOffset: hiddenState ? gap + shelf + s * 0.2 + 6 : 0
     property real slide: hideOffset
@@ -295,7 +295,7 @@ Window {
             }
             onEntered: win.zoomAmount = 1
             onExited: {
-                if (win.menuOpen || win.dragging) return
+                if (win.menuOpen || win.popupOpen || win.dragging) return
                 win.zoomAmount = 0
                 win.hoveredIndex = -1
             }

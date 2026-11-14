@@ -11,13 +11,24 @@ Popup {
     property int row: -1
     property date viewMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
 
-    readonly property date today: new Date()
+    // Recomputed on every openFor: the dock can run for weeks at a time.
+    property date today: new Date()
     readonly property string monthLabel: popup.viewMonth.toLocaleDateString(Qt.locale(), "MMMM yyyy")
     readonly property int daysInMonth: new Date(popup.viewMonth.getFullYear(), popup.viewMonth.getMonth() + 1, 0).getDate()
     // Qt's firstDayOfWeek is 1 (Monday) … 7 (Sunday); Date.getDay() is 0 (Sunday) … 6 (Saturday).
     readonly property int firstDayOffset:
         (new Date(popup.viewMonth.getFullYear(), popup.viewMonth.getMonth(), 1).getDay() - Qt.locale().firstDayOfWeek + 7) % 7
     readonly property color accent: app.accent
+    // Colors follow the active theme; undefined tokens fall back to the glass.
+    // dock/app arrive through initial properties in arbitrary order, so color
+    // bindings wait for both before touching their values.
+    readonly property var t: dock && dock.t ? dock.t : ({})
+    readonly property bool ready: dock !== undefined && app !== undefined
+
+    function tint(c, a) {
+        const q = Qt.color(c)
+        return Qt.rgba(q.r, q.g, q.b, a)
+    }
 
     width: 280
     height: 340
@@ -27,17 +38,18 @@ Popup {
     closePolicy: Popup.CloseOnPressOutside | Popup.CloseOnEscape
     Material.roundedScale: app.radius
     background: Rectangle {
+        id: calBackground
+        objectName: "calBackground"
         radius: Math.min(popup.app.radius + 4, 18)
-        gradient: Gradient {
-            GradientStop { position: 0; color: Qt.lighter("#1a1a20", 1.35) }
-            GradientStop { position: 1; color: "#1a1a20" }
-        }
-        border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.14)
+        color: popup.ready ? popup.tint(popup.app.color(popup.t.background, "#1a1a20"), popup.t.backgroundOpacity >= 0 ? popup.t.backgroundOpacity : 0.82) : "transparent"
+        border.width: Math.max(1, popup.t.borderWidth || 1)
+        border.color: popup.ready ? popup.tint(popup.app.color(popup.t.border, "#ffffff"), Math.max(0.12, popup.t.borderOpacity >= 0 ? popup.t.borderOpacity : 0.14)) : "transparent"
     }
 
     function openFor(index) {
         row = index
+        today = new Date()
+        viewMonth = new Date(today.getFullYear(), today.getMonth(), 1)
         if (!dock) {
             open()
             return
@@ -80,10 +92,10 @@ Popup {
         Row {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 8
-            NavButton { glyph: "◀"; onClicked: popup.shift(-1) }
-            Text {
+            NavButton { glyph: "◀"; onClicked: popup.shift(-1) }            Text {
+                objectName: "calMonthLabel"
                 text: popup.monthLabel
-                color: "#f2f2f2"
+                color: popup.app.color(popup.t.textColor, "#f2f2f2")
                 font.pixelSize: 14
                 font.weight: Font.DemiBold
                 anchors.verticalCenter: parent.verticalCenter
@@ -138,7 +150,7 @@ Popup {
                         anchors.centerIn: parent
                         visible: parent.isDay
                         text: parent.day
-                        color: parent.isToday ? "#111114" : "#f2f2f2"
+                        color: parent.isToday ? "#111114" : popup.app.color(popup.t.textColor, "#f2f2f2")
                         font.pixelSize: 13
                         font.weight: parent.isToday ? Font.DemiBold : Font.Normal
                     }
