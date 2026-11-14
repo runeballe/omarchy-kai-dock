@@ -72,6 +72,7 @@ QVariantMap Config::defaults() {
         {"currentWorkspaceOnly", false},
         {"clickActiveMinimizes", true},
         {"clickAnimation", "bounce"},
+        {"hoverAnimation", "bounce"},
         {"launchAnimation", "bounce"},
         {"attentionAnimation", "wobble"},
         {"animationSpeed", 1.0},

@@ -207,6 +207,17 @@ private slots:
         }
     }
 
+    void hoverAnimationDefaultAndPersist() {
+        QTemporaryDir dir;
+        {
+            Config config(dir.filePath("cfg"), dir.filePath("data"));
+            QCOMPARE(config.get("hoverAnimation").toString(), QString("bounce"));
+            config.set("hoverAnimation", "flip");
+        }
+        Config again(dir.filePath("cfg"), dir.filePath("data"));
+        QCOMPARE(again.get("hoverAnimation").toString(), QString("flip"));
+    }
+
     void dockMenuEntriesRenderTheirText() {
         MenuAppStub appStub;
         QObject menuDock;

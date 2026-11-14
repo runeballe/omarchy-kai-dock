@@ -72,6 +72,10 @@ SettingsPage {
         Choice { key: "clickAnimation"; model: page.animations }
     }
     SettingRow {
+        title: qsTr("On hover")
+        Choice { key: "hoverAnimation"; model: page.animations }
+    }
+    SettingRow {
         title: qsTr("While an app starts")
         Choice { key: "launchAnimation"; model: page.animations }
     }

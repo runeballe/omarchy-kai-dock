@@ -150,6 +150,7 @@
   "With several windows, a click cycles through them instead. Scrolling over an icon always cycles.": "Med flere vinduer blar et klikk gjennom dem i stedet. Rulling over et ikon blar alltid.",
   "Animations": "Animasjoner",
   "On click": "Ved klikk",
+  "On hover": "Når pekeren er over",
   "While an app starts": "Mens et program starter",
   "When a window wants attention": "Når et vindu vil ha oppmerksomhet",
   "Speed": "Hastighet",
