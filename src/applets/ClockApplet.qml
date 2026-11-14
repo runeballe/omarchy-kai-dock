@@ -22,13 +22,20 @@ Item {
 
     readonly property string timeText: {
         translator.language
+        const base = applet.h24 ? "HH:mm" : "h:mm AP"
+        return applet.now.toLocaleTimeString(Qt.locale(), applet.seconds ? base + ":ss" : base)
+    }
+    // The tooltip and desklet heading stay at minute resolution so they don't
+    // churn every second.
+    readonly property string titleTime: {
+        translator.language
         return applet.now.toLocaleTimeString(Qt.locale(), applet.h24 ? "HH:mm" : "h:mm AP")
     }
     readonly property string dateText: {
         translator.language
         return applet.now.toLocaleDateString(Qt.locale(), "dddd d. MMMM")
     }
-    readonly property string title: timeText + " · " + dateText
+    readonly property string title: titleTime + " · " + dateText
 
     function activate(button) {
         if (shell.hasCommand("gnome-calendar")) shell.run("gnome-calendar")

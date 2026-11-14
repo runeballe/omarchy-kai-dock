@@ -271,6 +271,26 @@ private slots:
         QVERIFY2(grid && grid->isVisible(), "the grid glyph did not come back when the logo is missing");
     }
 
+    void clockDigitalSecondsFormat() {
+        ItemAppStub appStub;
+        QQmlComponent component(&engine, QUrl("qrc:/applets/ClockApplet.qml"));
+        auto *on = qobject_cast<QQuickItem *>(component.createWithInitialProperties({{"app", QVariant::fromValue(&appStub)}}));
+        QVERIFY2(on && !component.isError(), qPrintable(component.errorString()));
+        on->setParentItem(harnessWindow->contentItem());
+        const QRegularExpression withSeconds("\\d{1,2}:\\d{2}:\\d{2}");
+        QVERIFY(on->property("timeText").toString().contains(withSeconds));
+        QVERIFY(!on->property("title").toString().contains(withSeconds));
+        delete on;
+
+        clockConfig->set("clockSeconds", false);
+        auto *off = qobject_cast<QQuickItem *>(component.createWithInitialProperties({{"app", QVariant::fromValue(&appStub)}}));
+        QVERIFY2(off && !component.isError(), qPrintable(component.errorString()));
+        off->setParentItem(harnessWindow->contentItem());
+        QVERIFY(QRegularExpression("\\d{1,2}:\\d{2}$").match(off->property("timeText").toString()).hasMatch());
+        delete off;
+        clockConfig->set("clockSeconds", true);
+    }
+
     void systemMonitorParses() {
         const auto t = SystemMonitor::parseStat("cpu  100 0 50 800 50 0 0 0 0 0\ncpu0 1 2\n");
         QCOMPARE(t.total, quint64(1000));
@@ -377,6 +397,8 @@ private:
     QQuickWindow *harnessWindow = nullptr;
     QQmlEngine engine;
     QString m_loadError;
+    QTemporaryDir clockCfgDir;
+    Config *clockConfig = nullptr;
 
 private slots:
     void init() {
@@ -385,6 +407,13 @@ private slots:
             harnessWindow = new QQuickWindow;
             harnessWindow->resize(240, 240);
             harnessWindow->create();
+            if (!clockConfig) {
+                clockConfig = new Config(clockCfgDir.path(), clockCfgDir.path(), QString(), this);
+                engine.rootContext()->setContextProperty("config", clockConfig);
+                auto *translator = new Translator(clockCfgDir.filePath("language"), clockCfgDir.path(), this);
+                write(clockCfgDir.filePath("language"), "en\n");
+                engine.rootContext()->setContextProperty("translator", translator);
+            }
         }
     }
     void cleanup() {
