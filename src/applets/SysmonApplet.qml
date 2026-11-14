@@ -50,7 +50,6 @@ Item {
     Item {
         visible: !applet.desklet
         anchors.fill: parent
-        AppletTile { app: applet.app; tint: "#18181e" }
         Graph {
             x: parent.width * 0.16
             y: parent.height * 0.2

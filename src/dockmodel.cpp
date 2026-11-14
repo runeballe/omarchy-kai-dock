@@ -157,18 +157,36 @@ QList<DockItem> DockModel::build() const {
     }
 
     QList<DockItem> result;
-    // The launcher opens from the front of the dock, flush before the pinned
-    // apps and with no separator of its own.
-    if (hasAppsFront)
-        result << appsFront;
-    result << out.mid(0, pinnedCount);
-    if (pinnedCount > 0 && out.size() > pinnedCount) {
+    // User-placed separators: "launcher" or a launcher app id, from the
+    // `separators` setting, each putting a line after that item.
+    QSet<QString> userSeps;
+    for (const auto &value : m_config->get("separators").toList())
+        userSeps.insert(value.toString());
+    auto addUserSep = [&](const QString &key) {
         DockItem sep;
         sep.kind = "separator";
-        sep.key = "sep:running";
+        sep.key = "sep:user:" + key;
         result << sep;
+    };
+
+    // The launcher opens from the front of the dock, flush before the pinned
+    // apps and with no separator of its own.
+    if (hasAppsFront) {
+        result << appsFront;
+        if (userSeps.contains("launcher"))
+            addUserSep("launcher");
     }
-    result << out.mid(pinnedCount);
+    for (int i = 0; i < out.size(); ++i) {
+        result << out[i];
+        if (i == pinnedCount - 1 && pinnedCount > 0 && out.size() > pinnedCount) {
+            DockItem sep;
+            sep.kind = "separator";
+            sep.key = "sep:running";
+            result << sep;
+        }
+        if (userSeps.contains(out[i].appId))
+            addUserSep(out[i].appId);
+    }
     if (!applets.isEmpty() && !result.isEmpty()) {
         DockItem sep;
         sep.kind = "separator";

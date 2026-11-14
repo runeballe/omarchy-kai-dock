@@ -245,8 +245,26 @@ private slots:
         QCOMPARE(applets, 3);
     }
 
-    void dockModelKeepsAppsDetachedOutOfFrontSlot() {
+    void userSeparatorsPlaceLines() {
         QTemporaryDir dir;
+        Config config(dir.filePath("cfg"), dir.filePath("data"));
+        config.set("launchersSeeded", true);
+        config.set("launchers", QVariantList{"chromium", "firefox", "ghostty"});
+        config.set("separators", QVariantList{"launcher", "firefox", "ghostty"});
+        AppIndex apps({dir.filePath("apps")});
+        DockModel model(&config, &apps, nullptr);
+        const auto items = model.items();
+        QCOMPARE(items[0].key, QString("applet:apps"));
+        QCOMPARE(items[1].key, QString("sep:user:launcher"));
+        QCOMPARE(items[2].appId, QString("chromium"));
+        QCOMPARE(items[3].appId, QString("firefox"));
+        QCOMPARE(items[4].key, QString("sep:user:firefox"));
+        QCOMPARE(items[5].appId, QString("ghostty"));
+        QCOMPARE(items[6].key, QString("sep:user:ghostty"));
+        QCOMPARE(items[7].key, QString("sep:applets"));
+    }
+
+    void dockModelKeepsAppsDetachedOutOfFrontSlot() {        QTemporaryDir dir;
         write(dir.filePath("apps/a.desktop"), "[Desktop Entry]\nType=Application\nName=Alpha\nExec=a\n");
         write(dir.filePath("apps/b.desktop"), "[Desktop Entry]\nType=Application\nName=Beta\nExec=b\n");
         Config config(dir.filePath("cfg"), dir.filePath("data"));
@@ -331,6 +349,15 @@ private slots:
             QVERIFY2(!QString(kid->metaObject()->className()).startsWith("AppletTile"),
                      "the weather applet still draws a tile in the dock");
         delete weather;
+
+        QQmlComponent sysmonComponent(&engine, QUrl("qrc:/applets/SysmonApplet.qml"));
+        auto *sysmon = qobject_cast<QQuickItem *>(sysmonComponent.createWithInitialProperties({{"app", QVariant::fromValue(&appStub)}}));
+        QVERIFY2(sysmon && !sysmonComponent.isError(), qPrintable(sysmonComponent.errorString()));
+        sysmon->setParentItem(harnessWindow->contentItem());
+        for (auto *kid : sysmon->findChildren<QQuickItem *>())
+            QVERIFY2(!QString(kid->metaObject()->className()).startsWith("AppletTile"),
+                     "the system monitor still draws a tile in the dock");
+        delete sysmon;
         clockConfig->set("clockAnalog", true);
     }
 

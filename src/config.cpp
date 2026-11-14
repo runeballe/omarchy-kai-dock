@@ -73,6 +73,7 @@ QVariantMap Config::defaults() {
         {"clickActiveMinimizes", true},
         {"clickAnimation", "bounce"},
         {"hoverAnimation", "bounce"},
+        {"separators", QVariantList{}},
         {"launchAnimation", "bounce"},
         {"attentionAnimation", "wobble"},
         {"animationSpeed", 1.0},
