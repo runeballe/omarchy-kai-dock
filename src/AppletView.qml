@@ -6,6 +6,7 @@ Loader {
     property string appletId
     property string mode: "dock"
     property var app
+    property var dock
 
     readonly property var sources: ({
         apps: "qrc:/applets/AppsApplet.qml",
@@ -19,8 +20,9 @@ Loader {
     onLoaded: {
         item.mode = Qt.binding(() => view.mode)
         item.app = Qt.binding(() => view.app)
+        if (item.dock !== undefined) item.dock = Qt.binding(() => view.dock)
     }
-    function activate(button) {
-        if (item && item.activate) item.activate(button)
+    function activate(button, row) {
+        if (item && item.activate) item.activate(button, row)
     }
 }

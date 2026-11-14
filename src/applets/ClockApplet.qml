@@ -5,6 +5,7 @@ Item {
     id: applet
     property string mode: "dock"
     property var app
+    property var dock
     readonly property bool desklet: mode === "desklet"
     readonly property bool analog: config.values.clockAnalog
     readonly property bool seconds: config.values.clockSeconds
@@ -37,8 +38,18 @@ Item {
     }
     readonly property string title: titleTime + " · " + dateText
 
-    function activate(button) {
+    // In the dock the clock opens the calendar popup; detached, it launches
+    // the calendar app directly since the popup lives in the dock window.
+    function activate(button, row) {
+        if (mode === "dock" && dock) {
+            dock.openCalendar(row)
+            return
+        }
         if (shell.hasCommand("gnome-calendar")) shell.run("gnome-calendar")
+    }
+
+    function menuEntries() {
+        return [{ text: qsTr("Open calendar app…"), action: () => shell.run("gnome-calendar") }]
     }
 
     AppletTile { visible: !applet.desklet && !applet.analog; app: applet.app; tint: "#1a1a20" }

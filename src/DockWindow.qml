@@ -37,7 +37,7 @@ Window {
     readonly property real labelRoom: v.showLabels ? (vertical ? 260 : 46) : 10
     readonly property real depth: Math.ceil(iconBase + s * zoomFactor + s * 0.5 + labelRoom)
     property bool menuOpen: false
-    readonly property real surfaceDepth: menuOpen ? Math.max(depth, vertical ? 420 : 560) : depth
+    readonly property real surfaceDepth: (menuOpen || popupOpen) ? Math.max(depth, vertical ? 420 : 560) : depth
     readonly property real along: vertical ? (screen ? screen.height : 1080) : (screen ? screen.width : 1920)
 
     width: vertical ? surfaceDepth : along
@@ -206,7 +206,7 @@ Window {
     onWidthChanged: Qt.callLater(updateMask)
     onHeightChanged: Qt.callLater(updateMask)
     function updateMask() {
-        if (menuOpen) {
+        if (menuOpen || popupOpen) {
             shell.setInputRect(win, Qt.rect(0, 0, width, height))
             return
         }
@@ -333,7 +333,7 @@ Window {
                 const row = dockModel.get(i)
                 const delegate = items.itemAt(i)
                 if (row.kind === "applet") {
-                    if (delegate) delegate.activateApplet(mouse.button)
+                    if (delegate) delegate.activateApplet(mouse.button, i)
                     return
                 }
                 if (row.kind !== "app") return
@@ -386,6 +386,28 @@ Window {
         id: menu
         dock: win
         app: win.app
+    }
+
+    property bool popupOpen: false
+    CalendarPopup {
+        id: calendar
+        dock: win
+        app: win.app
+        parent: overlay
+        onClosed: if (win) win.calendarClosed()
+    }
+
+    function openCalendar(index) {
+        popupOpen = true
+        Qt.callLater(() => calendar.openFor(index))
+    }
+    function calendarClosed() {
+        popupOpen = false
+        if (!band.containsMouse) {
+            zoomAmount = 0
+            hoveredIndex = -1
+        }
+        Qt.callLater(updateMask)
     }
 
     function appletTitle(index) {

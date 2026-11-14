@@ -111,6 +111,7 @@ Item {
                         appletId: cell.kind === "applet" ? cell.appletId : ""
                         mode: "dock"
                         app: cell.app
+                        dock: cell.dock
                     }
                 }
             }
@@ -303,9 +304,9 @@ Item {
         function onLaunched(row) { if (row === cell.index && !cell.launching) cell.play(dock.v.launchAnimation, 1) }
     }
 
-    function activateApplet(button) {
+    function activateApplet(button, row) {
         playClick()
-        appletView.activate(button)
+        appletView.activate(button, row)
     }
     readonly property var applet: appletView.item
 }

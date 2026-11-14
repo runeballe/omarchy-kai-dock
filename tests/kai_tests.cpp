@@ -102,6 +102,26 @@ public:
     Q_INVOKABLE QPointF anchorFor(int, double) const { return QPointF(960, 350); }
 };
 
+// Counts calls from ClockApplet.activate in dock mode.
+class ClockDockStub : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(int openCalendarCalls READ openCalendarCalls CONSTANT)
+public:
+    int m_calls = 0;
+    int openCalendarCalls() const { return m_calls; }
+    Q_INVOKABLE void openCalendar(int) { ++m_calls; }
+};
+
+// shell stand-in: nothing available, run() counted.
+class ShellStub : public QObject {
+    Q_OBJECT
+public:
+    explicit ShellStub(QObject *parent = nullptr) : QObject(parent) {}
+    int m_runs = 0;
+    Q_INVOKABLE bool hasCommand(const QString &) const { return false; }
+    Q_INVOKABLE void run(const QString &) { ++m_runs; }
+};
+
 class KaiTests : public QObject {
     Q_OBJECT
 
@@ -331,6 +351,34 @@ private slots:
         QVERIFY(popup->property("monthLabel").toString() != after);
     }
 
+    void clockClickOpensCalendarPopupInDockMode() {
+        ItemAppStub appStub;
+        ClockDockStub dockStub;
+        QQmlComponent component(&engine, QUrl("qrc:/applets/ClockApplet.qml"));
+        auto *clock = qobject_cast<QQuickItem *>(component.createWithInitialProperties(
+            {{"app", QVariant::fromValue(&appStub)}, {"dock", QVariant::fromValue(&dockStub)}}));
+        QVERIFY2(clock && !component.isError(), qPrintable(component.errorString()));
+        clock->setParentItem(harnessWindow->contentItem());
+
+        const QVariant dv = clock->property("dock");
+        QVERIFY2(dv.value<QObject *>() == &dockStub, qPrintable("dock property: " + dv.toString() + " typeName=" + dv.typeName()));
+        QVERIFY2(clock->property("mode").toString() == "dock", qPrintable("mode=" + clock->property("mode").toString()));
+
+        QMetaObject::invokeMethod(clock, "activate", Q_ARG(QVariant, 0), Q_ARG(QVariant, 3));
+        QCOMPARE(dockStub.openCalendarCalls(), 1);
+
+        clock->setProperty("mode", "desklet");
+        QMetaObject::invokeMethod(clock, "activate", Q_ARG(QVariant, 0), Q_ARG(QVariant, 3));
+        QCOMPARE(dockStub.openCalendarCalls(), 1);  // desklet keeps launching gnome-calendar
+
+        QVariant entries;
+        QMetaObject::invokeMethod(clock, "menuEntries", Q_RETURN_ARG(QVariant, entries));
+        const QVariantList list = entries.toList();
+        QVERIFY(list.size() >= 1);
+        QVERIFY(!list.first().toMap().value("text").toString().isEmpty());
+        delete clock;
+    }
+
     void systemMonitorParses() {
         const auto t = SystemMonitor::parseStat("cpu  100 0 50 800 50 0 0 0 0 0\ncpu0 1 2\n");
         QCOMPARE(t.total, quint64(1000));
@@ -440,6 +488,7 @@ private:
     QTemporaryDir clockCfgDir;
     Config *clockConfig = nullptr;
     QObject *lastPopup = nullptr;
+    ShellStub *shellStub = nullptr;
 
 private slots:
     void init() {
@@ -455,6 +504,8 @@ private slots:
                 auto *translator = new Translator(clockCfgDir.filePath("language"), clockCfgDir.path(), this);
                 write(clockCfgDir.filePath("language"), "en\n");
                 engine.rootContext()->setContextProperty("translator", translator);
+                shellStub = new ShellStub(this);
+                engine.rootContext()->setContextProperty("shell", shellStub);
             }
         }
     }
