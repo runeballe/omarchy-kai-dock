@@ -15,6 +15,7 @@
 #include "apps.h"
 #include "config.h"
 #include "dockmodel.h"
+#include "fonts.h"
 #include "hyprland.h"
 #include "sysinfo.h"
 #include "theme.h"
@@ -557,6 +558,51 @@ private slots:
         }
         Config again(dir.filePath("cfg"), dir.filePath("data"));
         QCOMPARE(again.get("hoverAnimation").toString(), QString("flip"));
+    }
+
+    void clockFontSettings() {
+        QTemporaryDir dir;
+        {
+            Config config(dir.filePath("cfg"), dir.filePath("data"));
+            QCOMPARE(config.get("clockFont").toString(), QString(""));
+            QCOMPARE(config.get("clockFontScale").toDouble(), 1.0);
+            config.set("clockFont", "JetBrainsMono Nerd Font");
+            config.set("clockFontScale", 0.8);
+        }
+        Config again(dir.filePath("cfg"), dir.filePath("data"));
+        QCOMPARE(again.get("clockFont").toString(), QString("JetBrainsMono Nerd Font"));
+        QCOMPARE(again.get("clockFontScale").toDouble(), 0.8);
+    }
+
+    void fontListIsAvailable() {
+        QVERIFY(Fonts::families().size() > 0);
+    }
+
+    void clockUsesConfiguredFont() {
+        ItemAppStub appStub;
+        clockConfig->set("clockFont", "Noto Sans");
+        clockConfig->set("clockFontScale", 2.0);
+        clockConfig->set("clockAnalog", false);
+        QQmlComponent component(&engine, QUrl("qrc:/applets/ClockApplet.qml"));
+        auto *clock = qobject_cast<QQuickItem *>(component.createWithInitialProperties({{"app", QVariant::fromValue(&appStub)}}));
+        QVERIFY2(clock && !component.isError(), qPrintable(component.errorString()));
+        clock->setParentItem(harnessWindow->contentItem());
+        clock->setWidth(48);
+        clock->setHeight(48);
+        QQuickItem *timeText = nullptr;
+        for (auto *kid : clock->findChildren<QQuickItem *>()) {
+            if (QString(kid->metaObject()->className()).startsWith("QQuickText")
+                && kid->isVisible() && kid->property("text").toString().contains(":"))
+                timeText = kid;
+        }
+        QVERIFY2(timeText, "no time text found");
+        QCOMPARE(timeText->property("font").value<QFont>().family(), QString("Noto Sans"));
+        const QFont f = timeText->property("font").value<QFont>();
+        QVERIFY2(qAbs(f.pixelSize() - 48 * 0.27 * 2.0) < 0.5,
+                 qPrintable(QString("pixelSize=%1 width=%2").arg(f.pixelSize()).arg(clock->width())));
+        delete clock;
+        clockConfig->set("clockFont", "");
+        clockConfig->set("clockFontScale", 1.0);
     }
 
 private:

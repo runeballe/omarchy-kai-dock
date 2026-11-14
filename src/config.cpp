@@ -80,6 +80,8 @@ QVariantMap Config::defaults() {
         {"clock24h", true},
         {"clockAnalog", true},
         {"clockSeconds", true},
+        {"clockFont", ""},
+        {"clockFontScale", 1.0},
         {"weatherCity", ""},
         {"weatherUnits", "metric"},
         {"theme", "omarchy"},

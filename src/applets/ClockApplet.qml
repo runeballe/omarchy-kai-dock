@@ -10,6 +10,9 @@ Item {
     readonly property bool analog: config.values.clockAnalog
     readonly property bool seconds: config.values.clockSeconds
     readonly property bool h24: config.values.clock24h
+    readonly property string clockFont: config.values.clockFont
+    readonly property real clockFontScale: config.values.clockFontScale > 0 ? config.values.clockFontScale : 1.0
+    readonly property string fontCss: clockFont.length > 0 ? clockFont : ""
     readonly property size deskletSize: Qt.size(230, analog ? 270 : 150)
 
     property date now: new Date()
@@ -61,7 +64,12 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: applet.timeText
             color: "white"
-            font.pixelSize: applet.desklet ? 54 : applet.width * 0.27
+            Binding on font.family {
+                when: applet.clockFont.length > 0
+                value: applet.clockFont
+                restoreMode: Binding.RestoreBindingOrValue
+            }
+            font.pixelSize: applet.desklet ? 54 * applet.clockFontScale : applet.width * 0.27 * applet.clockFontScale
             font.weight: Font.DemiBold
             font.features: { "tnum": 1 }
         }
@@ -69,27 +77,6 @@ Item {
             visible: applet.desklet
             anchors.horizontalCenter: parent.horizontalCenter
             text: applet.dateText
-            color: applet.app ? applet.app.accent : "#FFD60A"
-            font.pixelSize: applet.desklet ? 16 : applet.width * 0.15
-        }
-    }
-
-    // Digital.
-    Column {
-        visible: !applet.analog
-        anchors.centerIn: parent
-        spacing: 0
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: applet.timeText
-            color: "white"
-            font.pixelSize: applet.desklet ? 54 : applet.width * 0.27
-            font.weight: Font.DemiBold
-            font.features: { "tnum": 1 }
-        }
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: applet.desklet ? applet.dateText : applet.now.toLocaleDateString(Qt.locale(), "ddd d")
             color: applet.app ? applet.app.accent : "#FFD60A"
             font.pixelSize: applet.desklet ? 16 : applet.width * 0.15
         }
@@ -190,7 +177,12 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: applet.timeText
             color: "white"
-            font.pixelSize: 22
+            Binding on font.family {
+                when: applet.clockFont.length > 0
+                value: applet.clockFont
+                restoreMode: Binding.RestoreBindingOrValue
+            }
+            font.pixelSize: 22 * applet.clockFontScale
             font.weight: Font.DemiBold
         }
         Text {
