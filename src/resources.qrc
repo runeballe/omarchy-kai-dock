@@ -7,6 +7,7 @@
         <file>DockItem.qml</file>
         <file>DockLabel.qml</file>
         <file>DockMenu.qml</file>
+        <file>CalendarPopup.qml</file>
         <file>DockShelf.qml</file>
         <file>DockWindow.qml</file>
         <file>Main.qml</file>

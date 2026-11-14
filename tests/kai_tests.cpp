@@ -89,6 +89,19 @@ public:
     Q_INVOKABLE QString withAlpha(const QString &color, double) const { return color; }
 };
 
+// Dock-window stand-in for popup positioning math.
+class CalDockStub : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(double width READ width CONSTANT)
+    Q_PROPERTY(double height READ height CONSTANT)
+    Q_PROPERTY(QString edge READ edge CONSTANT)
+public:
+    double width() const { return 1920; }
+    double height() const { return 400; }
+    QString edge() const { return "bottom"; }
+    Q_INVOKABLE QPointF anchorFor(int, double) const { return QPointF(960, 350); }
+};
+
 class KaiTests : public QObject {
     Q_OBJECT
 
@@ -291,6 +304,33 @@ private slots:
         clockConfig->set("clockSeconds", true);
     }
 
+    void calendarPopupShowsMonthAndNavigates() {
+        ItemAppStub appStub;
+        CalDockStub dockStub;
+        QVariantMap props{{"app", QVariant::fromValue(&appStub)},
+                          {"dock", QVariant::fromValue(&dockStub)},
+                          {"parent", QVariant::fromValue(harnessWindow->contentItem())}};
+        QQmlComponent component(&engine, QUrl("qrc:/CalendarPopup.qml"));
+        QObject *popup = component.createWithInitialProperties(props);
+        QVERIFY2(popup && !component.isError(), qPrintable(component.errorString()));
+        lastPopup = popup;
+        const QString before = popup->property("monthLabel").toString();
+        QVERIFY(!before.isEmpty());
+        const bool ok = QMetaObject::invokeMethod(popup, "openFor", Q_ARG(QVariant, 0));
+        QVERIFY2(ok, "openFor is not invokable");
+        QTest::qWait(30);
+        QVERIFY2(popup->property("visible").toBool() == true,
+                 qPrintable(QString("visible=%1 x=%2 y=%3")
+                                .arg(popup->property("visible").toString())
+                                .arg(popup->property("x").toString())
+                                .arg(popup->property("y").toString())));
+        QMetaObject::invokeMethod(popup, "shift", Q_ARG(QVariant, 1));
+        QVERIFY(popup->property("monthLabel").toString() != before);
+        const QString after = popup->property("monthLabel").toString();
+        QMetaObject::invokeMethod(popup, "shift", Q_ARG(QVariant, -2));
+        QVERIFY(popup->property("monthLabel").toString() != after);
+    }
+
     void systemMonitorParses() {
         const auto t = SystemMonitor::parseStat("cpu  100 0 50 800 50 0 0 0 0 0\ncpu0 1 2\n");
         QCOMPARE(t.total, quint64(1000));
@@ -399,6 +439,7 @@ private:
     QString m_loadError;
     QTemporaryDir clockCfgDir;
     Config *clockConfig = nullptr;
+    QObject *lastPopup = nullptr;
 
 private slots:
     void init() {
@@ -407,6 +448,7 @@ private slots:
             harnessWindow = new QQuickWindow;
             harnessWindow->resize(240, 240);
             harnessWindow->create();
+            harnessWindow->show();  // offscreen: popups only open in a visible window
             if (!clockConfig) {
                 clockConfig = new Config(clockCfgDir.path(), clockCfgDir.path(), QString(), this);
                 engine.rootContext()->setContextProperty("config", clockConfig);
@@ -417,6 +459,10 @@ private slots:
         }
     }
     void cleanup() {
+        if (lastPopup) {
+            delete lastPopup;
+            lastPopup = nullptr;
+        }
         for (auto *item : harnessWindow->contentItem()->findChildren<QQuickItem *>())
             delete item;
     }
