@@ -223,6 +223,54 @@ private slots:
             QVERIFY(i.appletId != "apps");
     }
 
+    QQuickItem *loadAppsApplet(const QVariantMap &extra) {
+        ItemAppStub appStub;
+        QVariantMap props{{"app", QVariant::fromValue(&appStub)}};
+        for (auto it = extra.begin(); it != extra.end(); ++it)
+            props.insert(it.key(), it.value());
+        QQmlComponent component(&engine, QUrl("qrc:/applets/AppsApplet.qml"));
+        QObject *raw = component.createWithInitialProperties(props);
+        auto *item = qobject_cast<QQuickItem *>(raw);
+        if (item)
+            item->setParentItem(harnessWindow->contentItem());
+        if (component.isError() || !item) {
+            m_loadError = component.errorString();
+            return nullptr;
+        }
+        QTest::qWait(50);  // give the local-file image a tick to load
+        return item;
+    }
+
+private slots:
+    void appsAppletShowsOmarchyLogo() {
+        QQuickItem *item = loadAppsApplet({});
+        QVERIFY2(item, qPrintable(m_loadError));
+        QQuickItem *image = nullptr;
+        for (auto *kid : item->findChildren<QQuickItem *>())
+            if (QString(kid->metaObject()->className()).startsWith("QQuickImage"))
+                image = kid;
+        QVERIFY2(image, "the applet has no logo Image");
+        QVERIFY(image->property("source").toString().contains("omarchy/icon.png"));
+        QCOMPARE(image->isVisible(), true);
+    }
+
+    void appsAppletLogoFallsBackToGrid() {
+        QQuickItem *item = loadAppsApplet({{"logoSource", "file:///nonexistent/kai-missing.png"}});
+        QVERIFY2(item, qPrintable(m_loadError));
+        QQuickItem *image = nullptr;
+        QQuickItem *grid = nullptr;
+        for (auto *kid : item->findChildren<QQuickItem *>()) {
+            const QString cn = kid->metaObject()->className();
+            if (cn.startsWith("QQuickImage"))
+                image = kid;
+            else if (cn.startsWith("QQuickGrid"))
+                grid = kid;
+        }
+        QVERIFY2(image, "the applet has no logo Image");
+        QCOMPARE(image->isVisible(), false);
+        QVERIFY2(grid && grid->isVisible(), "the grid glyph did not come back when the logo is missing");
+    }
+
     void systemMonitorParses() {
         const auto t = SystemMonitor::parseStat("cpu  100 0 50 800 50 0 0 0 0 0\ncpu0 1 2\n");
         QCOMPARE(t.total, quint64(1000));
