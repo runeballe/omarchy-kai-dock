@@ -3,7 +3,11 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTemporaryDir>
+#include <QQmlComponent>
+#include <QQmlEngine>
+#include <QQuickItem>
 #include <QtTest>
+#include <memory>
 
 #include "apps.h"
 #include "config.h"
@@ -20,6 +24,13 @@ static void write(const QString &path, const QByteArray &contents) {
     QVERIFY(file.open(QIODevice::WriteOnly));
     file.write(contents);
 }
+
+class MenuAppStub : public QObject {
+    Q_OBJECT
+public:
+    Q_PROPERTY(double radius READ radius CONSTANT)
+    double radius() const { return 8; }
+};
 
 class KaiTests : public QObject {
     Q_OBJECT
@@ -194,6 +205,37 @@ private slots:
             QJsonDocument::fromJson(f.readAll(), &e);
             QCOMPARE(e.error, QJsonParseError::NoError);
         }
+    }
+
+    void dockMenuEntriesRenderTheirText() {
+        MenuAppStub appStub;
+        QObject menuDock;
+        QQmlEngine engine;
+        QQmlComponent component(&engine, QUrl("qrc:/DockMenu.qml"));
+        std::unique_ptr<QObject> menu{component.createWithInitialProperties(
+            {{"dock", QVariant::fromValue(&menuDock)},
+             {"app", QVariant::fromValue(&appStub)}})};
+        QVERIFY2(!component.isError(), qPrintable(component.errorString()));
+        QVERIFY(menu);
+        menu->setProperty("entries", QVariantList{
+            QVariantMap{{"header", true}, {"text", "Firefox"}},
+            QVariantMap{{"text", "New window"}},
+            QVariantMap{{"separator", true}},
+            QVariantMap{{"text", "Pin to dock"}},
+        });
+        int checked = 0;
+        for (QQuickItem *item : menu->findChildren<QQuickItem*>()) {
+            if (!QString(item->metaObject()->className()).contains("MenuItem"))
+                continue;
+            const QVariantMap d = item->property("d").toMap();
+            QQuickItem *content = item->property("contentItem").value<QQuickItem*>();
+            QVERIFY2(content, qPrintable(QString("entry '%1' has no contentItem; nothing renders its text")
+                                             .arg(item->property("text").toString())));
+            if (!d.value("separator").toBool())
+                QCOMPARE(item->property("text").toString(), d.value("text").toString());
+            ++checked;
+        }
+        QCOMPARE(checked, 4);
     }
 };
 

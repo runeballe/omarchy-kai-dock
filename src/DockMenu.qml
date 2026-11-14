@@ -103,13 +103,21 @@ Menu {
             font.weight: d.header ? Font.DemiBold : Font.Normal
             font.pixelSize: d.header ? 13 : 14
             Material.foreground: d.danger ? "#ff6b6b" : undefined
-            contentItem: d.separator ? sepLine : null
+            contentItem: d.separator ? sepLine : labelText
             Rectangle {
                 id: sepLine
                 visible: entry.d.separator
                 height: 1
                 color: Qt.rgba(1, 1, 1, 0.12)
                 anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+            }
+            Text {
+                id: labelText
+                text: entry.text
+                font: entry.font
+                color: entry.d.danger ? "#ff6b6b" : entry.Material.foreground
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
             }
             onTriggered: {
                 if (d.action) d.action()
