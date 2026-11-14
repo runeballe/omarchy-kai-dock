@@ -52,7 +52,27 @@ Item {
         return [{ text: qsTr("Open calendar app…"), action: () => shell.run("gnome-calendar") }]
     }
 
-    AppletTile { visible: !applet.desklet && !applet.analog; app: applet.app; tint: "#1a1a20" }
+    // Digital.
+    Column {
+        visible: !applet.analog
+        anchors.centerIn: parent
+        spacing: 0
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: applet.timeText
+            color: "white"
+            font.pixelSize: applet.desklet ? 54 : applet.width * 0.27
+            font.weight: Font.DemiBold
+            font.features: { "tnum": 1 }
+        }
+        Text {
+            visible: applet.desklet
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: applet.dateText
+            color: applet.app ? applet.app.accent : "#FFD60A"
+            font.pixelSize: applet.desklet ? 16 : applet.width * 0.15
+        }
+    }
 
     // Digital.
     Column {

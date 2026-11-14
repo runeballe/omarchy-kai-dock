@@ -309,8 +309,31 @@ private slots:
         QVERIFY2(grid && grid->isVisible(), "the grid glyph did not come back when the logo is missing");
     }
 
-    void clockDigitalSecondsFormat() {
+    void dockAppletsHaveNoTile() {
+        // The clock and weather draw straight on the shelf: no dark tile box.
         ItemAppStub appStub;
+        clockConfig->set("clockAnalog", false);  // digital face in the dock
+        QQmlComponent clockComponent(&engine, QUrl("qrc:/applets/ClockApplet.qml"));
+        auto *clock = qobject_cast<QQuickItem *>(clockComponent.createWithInitialProperties({{"app", QVariant::fromValue(&appStub)}}));
+        QVERIFY2(clock && !clockComponent.isError(), qPrintable(clockComponent.errorString()));
+        clock->setParentItem(harnessWindow->contentItem());
+        for (auto *kid : clock->findChildren<QQuickItem *>())
+            QVERIFY2(!QString(kid->metaObject()->className()).startsWith("AppletTile"),
+                     "the clock applet still draws a tile in the dock");
+        delete clock;
+
+        QQmlComponent weatherComponent(&engine, QUrl("qrc:/applets/WeatherApplet.qml"));
+        auto *weather = qobject_cast<QQuickItem *>(weatherComponent.createWithInitialProperties({{"app", QVariant::fromValue(&appStub)}}));
+        QVERIFY2(weather && !weatherComponent.isError(), qPrintable(weatherComponent.errorString()));
+        weather->setParentItem(harnessWindow->contentItem());
+        for (auto *kid : weather->findChildren<QQuickItem *>())
+            QVERIFY2(!QString(kid->metaObject()->className()).startsWith("AppletTile"),
+                     "the weather applet still draws a tile in the dock");
+        delete weather;
+        clockConfig->set("clockAnalog", true);
+    }
+
+    void clockDigitalSecondsFormat() {        ItemAppStub appStub;
         QQmlComponent component(&engine, QUrl("qrc:/applets/ClockApplet.qml"));
         auto *on = qobject_cast<QQuickItem *>(component.createWithInitialProperties({{"app", QVariant::fromValue(&appStub)}}));
         QVERIFY2(on && !component.isError(), qPrintable(component.errorString()));
