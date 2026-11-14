@@ -18,6 +18,11 @@ Three UX upgrades to the kai dock, requested by Rune after daily use:
   is on (Rune's config has it on). Analog mode is untouched.
 - Clicking the clock opens an in-dock month calendar popup: current month,
   today accented, previous/next month navigation, localized via `Qt.locale()`.
+  GNOME apps keep working on Hyprland (Nautilus already runs from the dock),
+  so gnome-calendar stays reachable: the clock's right-click menu gains an
+  `Open calendar app…` entry (Norwegian: «Åpne kalenderapp»), and a click on
+  a detached clock desklet keeps launching gnome-calendar, since the popup
+  lives inside the dock window and cannot open from a desklet.
 - `hoverAnimation` setting with choices `none / bounce / pulse / flip /
   wobble / blink`, default `bounce`. Plays once when the pointer enters any
   dock icon (apps and applets, not separators). Plays nothing while a launch
@@ -88,10 +93,14 @@ inconsistent motion vocabulary and no choices.
 ### Launcher placement — chosen: model pins `apps` at index 0
 
 `DockModel` orders the `apps` applet before launchers, separated from the
-other applets which stay right of the separator. `AppsApplet` renders the
-Omarchy logo image with a fallback to the current grid glyph. Rejected:
-turning it into a pinned launcher entry — that would attach window matching,
-app menus and pinning semantics the launcher applet does not want.
+other applets which stay right of the separator. The logo sits flush against
+the first launcher, with no separator between them (matching how launchers
+lie against each other); a lone logo appears without any separator when
+there are no launchers and no running apps — this composition was settled
+by the owner's review of this document. `AppsApplet` renders the Omarchy
+logo image with a fallback to the current grid glyph. Rejected: turning it
+into a pinned launcher entry — that would attach window matching, app menus
+and pinning semantics the launcher applet does not want.
 
 ## Left to the builder
 
@@ -109,3 +118,7 @@ app menus and pinning semantics the launcher applet does not want.
   a Config save/load round-trip; `DockModel` puts the `apps` applet first
   with launchers after it; `CalendarPopup` instantiates offscreen and shows
   the current month with today marked.
+- Builder-check outcome (fresh subagent review, 2026-11-14): the activation
+  contract above (dock click = popup, menu entry and desklet click =
+  gnome-calendar) and the flush launcher composition were the only questions
+  that could not be settled from the document; both are now answered here.
