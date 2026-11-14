@@ -22,6 +22,16 @@ SettingsPage {
         { text: qsTr("Bounce"), value: "bounce" }, { text: qsTr("Pulse"), value: "pulse" },
         { text: qsTr("Flip"), value: "flip" }, { text: qsTr("Wobble"), value: "wobble" },
         { text: qsTr("Blink"), value: "blink" }, { text: qsTr("None"), value: "none" }]
+    // One toggle per fixed dock element: the launcher and each pinned app.
+    readonly property var separatorChoices: {
+        const items = [{ key: "launcher", label: qsTr("Launcher") }]
+        for (let i = 0; i < dockModel.count; ++i) {
+            const row = dockModel.get(i)
+            if (row.kind === "app" && row.pinned)
+                items.push({ key: row.appId, label: row.name })
+        }
+        return items
+    }
 
     SectionTitle { text: qsTr("Visibility") }
     SettingRow {
@@ -64,6 +74,44 @@ SettingsPage {
         title: qsTr("Clicking the focused app minimizes it")
         description: qsTr("With several windows, a click cycles through them instead. Scrolling over an icon always cycles.")
         Switch { checked: page.v.clickActiveMinimizes; onToggled: config.set("clickActiveMinimizes", checked) }
+    }
+    SettingRow {
+        title: qsTr("Separators")
+        description: qsTr("Adds a separator line after each selected item.")
+        enabled: true
+        Flow {
+            width: parent.width
+            spacing: 6
+            Repeater {
+                model: page.separatorChoices
+                delegate: AbstractButton {
+                    id: sepChip
+                    required property var modelData
+                    readonly property bool on: page.v.separators.includes(sepChip.modelData.key)
+                    checkable: true
+                    checked: on
+                    hoverEnabled: true
+                    onClicked: {
+                        const cur = (page.v.separators || []).filter(function (k) { return k !== sepChip.modelData.key })
+                        if (!on) cur.push(sepChip.modelData.key)
+                        config.set("separators", cur)
+                    }
+                    background: Rectangle {
+                        radius: Math.min(6, app.radius + 6)
+                        color: sepChip.checked ? app.withAlpha(app.accent, 0.85) : (sepChip.hovered ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.07))
+                    }
+                    contentItem: Text {
+                        text: sepChip.modelData.label
+                        color: sepChip.checked ? "#111114" : "#f2f2f2"
+                        font.pixelSize: 13
+                        leftPadding: 10
+                        rightPadding: 10
+                        topPadding: 5
+                        bottomPadding: 5
+                    }
+                }
+            }
+        }
     }
 
     SectionTitle { text: qsTr("Animations") }
