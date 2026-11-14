@@ -502,7 +502,7 @@ private slots:
         QVERIFY2(apps && !component.isError(), qPrintable(component.errorString()));
         apps->setParentItem(harnessWindow->contentItem());
         QMetaObject::invokeMethod(apps, "activate", Q_ARG(QVariant, 0));
-        QCOMPARE(shellStub->lastRun(), QString("wofi --show drun"));
+        QCOMPARE(shellStub->lastRun(), QString("omarchy-menu toggle"));
         delete apps;
         shellStub->setHasAll(false);
     }
