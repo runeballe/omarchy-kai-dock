@@ -111,6 +111,7 @@ Item {
                         appletId: cell.kind === "applet" ? cell.appletId : ""
                         mode: "dock"
                         app: cell.app
+                        dock: cell.dock
                     }
                 }
             }
@@ -281,6 +282,14 @@ Item {
     }
     function playClick() { play(dock.v.clickAnimation, 1) }
 
+    // Hover runs at most one animation, never on top of a launch/attention loop.
+    function playHover() {
+        if (loopState !== "") return
+        if (bounceAnim.running || pulseAnim.running || flipAnim.running || wobbleAnim.running || blinkAnim.running)
+            return
+        play(dock.v.hoverAnimation, 1)
+    }
+
     // Looping states: a launch in progress, a window asking for attention.
     readonly property string loopState: launching ? "launch" : urgent ? "attention" : ""
     onLoopStateChanged: {
@@ -295,9 +304,9 @@ Item {
         function onLaunched(row) { if (row === cell.index && !cell.launching) cell.play(dock.v.launchAnimation, 1) }
     }
 
-    function activateApplet(button) {
+    function activateApplet(button, row) {
         playClick()
-        appletView.activate(button)
+        appletView.activate(button, row)
     }
     readonly property var applet: appletView.item
 }

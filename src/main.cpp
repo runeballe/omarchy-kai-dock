@@ -22,6 +22,7 @@
 #include "shell.h"
 #include "sysinfo.h"
 #include "theme.h"
+#include "fonts.h"
 #include "translator.h"
 #include "weather.h"
 
@@ -168,6 +169,7 @@ int main(int argc, char *argv[]) {
     context->setContextProperty("system", &system);
     context->setContextProperty("weather", &weather);
     context->setContextProperty("shell", &shell);
+    context->setContextProperty("fonts", new Fonts());
     context->setContextProperty("openSettingsOnStart", command == "settings");
     engine.load(QUrl("qrc:/Main.qml"));
     if (engine.rootObjects().isEmpty())

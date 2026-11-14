@@ -13,6 +13,7 @@ HEADERS += \
     src/iconprovider.h \
     src/shell.h \
     src/sysinfo.h \
+    src/fonts.h \
     src/theme.h \
     src/translator.h \
     src/weather.h

@@ -29,10 +29,6 @@ Item {
     Item {
         visible: !applet.desklet
         anchors.fill: parent
-        AppletTile {
-            app: applet.app
-            tint: !applet.ready ? "#2a2c34" : weather.day ? "#2f6fb3" : "#20243a"
-        }
         WeatherGlyph {
             width: parent.width * 0.74
             height: width

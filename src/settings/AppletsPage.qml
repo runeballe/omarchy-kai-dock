@@ -94,6 +94,27 @@ SettingsPage {
                         Switch { text: qsTr("24-hour"); checked: page.v.clock24h; onToggled: config.set("clock24h", checked) }
                         Switch { text: qsTr("Seconds"); checked: page.v.clockSeconds; onToggled: config.set("clockSeconds", checked) }
                     }
+                    RowLayout {
+                        visible: !page.v.clockAnalog
+                        Layout.fillWidth: true
+                        spacing: 10
+                        ComboBox {
+                            id: clockFontBox
+                            Layout.fillWidth: true
+                            model: fonts.families
+                            editable: false
+                            currentIndex: model.indexOf(page.v.clockFont)
+                            displayText: currentIndex < 0 && page.v.clockFont.length > 0 ? page.v.clockFont : currentText
+                            onActivated: (index) => config.set("clockFont", model[index])
+                        }
+                        ValueSlider {
+                            Layout.preferredWidth: 190
+                            from: 0.6; to: 2.5; stepSize: 0.1; decimals: 1
+                            value: page.v.clockFontScale
+                            suffix: "×"
+                            onMoved: (x) => config.set("clockFontScale", x)
+                        }
+                    }
                 }
                 ColumnLayout {
                     visible: card.id === "weather"
