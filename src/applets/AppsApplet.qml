@@ -11,10 +11,12 @@ Item {
     readonly property size deskletSize: Qt.size(150, 150)
 
     function activate(button) {
-        if (shell.hasCommand("omarchy-shell")) shell.run("omarchy-shell omarchy.dock apps")
-        else if (shell.hasCommand("walker")) shell.run("walker")
+        // The omarchy shell's own dock app grid died with the omarchy.dock
+        // plugin, so the app grid comes from wofi (or the Omarchy menu).
+        if (shell.hasCommand("wofi")) shell.run("wofi --show drun")
+        else if (shell.hasCommand("omarchy-menu")) shell.run("omarchy-menu toggle")
         else if (shell.hasCommand("fuzzel")) shell.run("fuzzel")
-        else if (shell.hasCommand("wofi")) shell.run("wofi --show drun")
+        else if (shell.hasCommand("walker")) shell.run("walker")
         else app.openSettings("launchers")
     }
 

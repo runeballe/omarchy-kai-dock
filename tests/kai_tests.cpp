@@ -121,11 +121,18 @@ public:
 // shell stand-in: nothing available, run() counted.
 class ShellStub : public QObject {
     Q_OBJECT
+    Q_PROPERTY(bool hasAll READ hasAll WRITE setHasAll)
 public:
     explicit ShellStub(QObject *parent = nullptr) : QObject(parent) {}
     int m_runs = 0;
-    Q_INVOKABLE bool hasCommand(const QString &) const { return false; }
-    Q_INVOKABLE void run(const QString &) { ++m_runs; }
+    QString m_last;
+    bool m_hasAll = false;
+    bool hasAll() const { return m_hasAll; }
+    void setHasAll(bool on) { m_hasAll = on; }
+    Q_INVOKABLE bool hasCommand(const QString &) const { return m_hasAll; }
+    Q_INVOKABLE void run(const QString &cmd) { ++m_runs; m_last = cmd; }
+    Q_PROPERTY(QString lastRun READ lastRun CONSTANT)
+    QString lastRun() const { return m_last; }
 };
 
 class KaiTests : public QObject {
@@ -487,8 +494,20 @@ private slots:
         QCOMPARE(label->property("color").value<QColor>(), QColor("#ff0000"));
     }
 
-    void clockClickOpensCalendarPopupInDockMode() {
+    void appsAppletLaunchesAppGrid() {
         ItemAppStub appStub;
+        shellStub->setHasAll(true);
+        QQmlComponent component(&engine, QUrl("qrc:/applets/AppsApplet.qml"));
+        auto *apps = qobject_cast<QQuickItem *>(component.createWithInitialProperties({{"app", QVariant::fromValue(&appStub)}}));
+        QVERIFY2(apps && !component.isError(), qPrintable(component.errorString()));
+        apps->setParentItem(harnessWindow->contentItem());
+        QMetaObject::invokeMethod(apps, "activate", Q_ARG(QVariant, 0));
+        QCOMPARE(shellStub->lastRun(), QString("wofi --show drun"));
+        delete apps;
+        shellStub->setHasAll(false);
+    }
+
+    void clockClickOpensCalendarPopupInDockMode() {        ItemAppStub appStub;
         ClockDockStub dockStub;
         QQmlComponent component(&engine, QUrl("qrc:/applets/ClockApplet.qml"));
         auto *clock = qobject_cast<QQuickItem *>(component.createWithInitialProperties(
