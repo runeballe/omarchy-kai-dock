@@ -137,6 +137,8 @@ QList<DockItem> DockModel::build() const {
             item.launching = true;
 
     QList<DockItem> applets;
+    DockItem appsFront;
+    bool hasAppsFront = false;
     for (const auto &value : m_config->get("applets").toList()) {
         const QVariantMap a = value.toMap();
         if (!a.value("enabled").toBool() || a.value("detached").toBool())
@@ -146,10 +148,19 @@ QList<DockItem> DockModel::build() const {
         item.appletId = a.value("id").toString();
         item.key = "applet:" + item.appletId;
         item.name = item.appletId;
+        if (item.appletId == QLatin1String("apps")) {
+            appsFront = item;
+            hasAppsFront = true;
+            continue;
+        }
         applets << item;
     }
 
     QList<DockItem> result;
+    // The launcher opens from the front of the dock, flush before the pinned
+    // apps and with no separator of its own.
+    if (hasAppsFront)
+        result << appsFront;
     result << out.mid(0, pinnedCount);
     if (pinnedCount > 0 && out.size() > pinnedCount) {
         DockItem sep;

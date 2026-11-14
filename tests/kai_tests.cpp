@@ -190,9 +190,12 @@ private slots:
         AppIndex apps({dir.filePath("apps")});
         DockModel model(&config, &apps, nullptr);
         const auto items = model.items();
-        QCOMPARE(items[0].appId, QString("b"));
-        QCOMPARE(items[1].appId, QString("a"));
-        QCOMPARE(items[2].kind, QString("separator"));
+        QCOMPARE(items[0].kind, QString("applet"));
+        QCOMPARE(items[0].appletId, QString("apps"));
+        QCOMPARE(items[1].appId, QString("b"));
+        QCOMPARE(items[2].appId, QString("a"));
+        QCOMPARE(items[3].kind, QString("separator"));
+        QCOMPARE(items[3].key, QString("sep:applets"));
         int applets = 0;
         for (const auto &i : items) applets += i.kind == "applet";
         QCOMPARE(applets, 4);  // apps, clock, sysmon, weather on by default
@@ -201,6 +204,23 @@ private slots:
         applets = 0;
         for (const auto &i : model.items()) applets += i.kind == "applet";
         QCOMPARE(applets, 3);
+    }
+
+    void dockModelKeepsAppsDetachedOutOfFrontSlot() {
+        QTemporaryDir dir;
+        write(dir.filePath("apps/a.desktop"), "[Desktop Entry]\nType=Application\nName=Alpha\nExec=a\n");
+        write(dir.filePath("apps/b.desktop"), "[Desktop Entry]\nType=Application\nName=Beta\nExec=b\n");
+        Config config(dir.filePath("cfg"), dir.filePath("data"));
+        config.set("launchersSeeded", true);
+        config.set("launchers", QVariantList{"b", "a"});
+        AppIndex apps({dir.filePath("apps")});
+        DockModel model(&config, &apps, nullptr);
+        config.setApplet("apps", "detached", true);
+        model.rebuild();
+        const auto items = model.items();
+        QCOMPARE(items[0].appId, QString("b"));
+        for (const auto &i : items)
+            QVERIFY(i.appletId != "apps");
     }
 
     void systemMonitorParses() {
