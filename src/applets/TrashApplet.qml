@@ -30,7 +30,7 @@ Item {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 10
         text: applet.title
-        color: "white"
+        color: app ? app.color(config.theme.textColor, "#f2f2f2") : "#f2f2f2"
         font.pixelSize: 13
     }
 }

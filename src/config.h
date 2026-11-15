@@ -79,6 +79,7 @@ private:
     void loadThemes();
     void rebuildTheme();
     QVariantMap themeData(const QString &id) const;
+    bool isBuiltinTheme(const QString &id) const;
     QVariantList appletList() const;
     void ensureApplets();
 

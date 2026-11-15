@@ -197,6 +197,14 @@ private slots:
         QVERIFY(config.deleteTheme("mine"));
         QCOMPARE(config.get("theme").toString(), QString("omarchy"));
         QVERIFY(!config.deleteTheme("glass"));  // built-ins stay
+        // A name that matches a built-in theme gets its own id rather than a
+        // file the built-in would shadow, so the tweaks survive.
+        config.applyTheme("omarchy");
+        config.setThemeOverride("background", "#ff0000");
+        const QString shadow = config.saveThemeAs("Glass");
+        QCOMPARE(shadow, QString("glass-2"));
+        QCOMPARE(config.theme().value("background").toString(), QString("#ff0000"));
+        QCOMPARE(config.installThemeData("{\"name\":\"Neon\",\"background\":\"#00ff00\",\"radius\":3}", &error), QString("neon-2"));
     }
 
     void appsMatchWindowClasses() {
@@ -268,7 +276,8 @@ private slots:
         QCOMPARE(items[4].key, QString("sep:user:firefox"));
         QCOMPARE(items[5].appId, QString("ghostty"));
         QCOMPARE(items[6].key, QString("sep:user:ghostty"));
-        QCOMPARE(items[7].key, QString("sep:applets"));
+        // The applets' own separator would sit right beside it; one line is enough.
+        QCOMPARE(items[7].kind, QString("applet"));
     }
 
     void dockModelKeepsAppsDetachedOutOfFrontSlot() {        QTemporaryDir dir;

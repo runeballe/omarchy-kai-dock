@@ -114,7 +114,7 @@ QList<DockItem> DockModel::build() const {
                 } else {
                     item.kind = "app";
                     item.key = key;
-                    item.name = c.title.isEmpty() ? c.windowClass : c.windowClass;
+                    item.name = c.windowClass;
                     item.icon = c.windowClass.toLower();
                 }
                 item.windowClass = c.windowClass;
@@ -194,6 +194,14 @@ QList<DockItem> DockModel::build() const {
         result << sep;
     }
     result << applets;
+
+    // A user separator can land next to an automatic one; one line is enough.
+    // The user's own wins, so its row keeps its identity.
+    for (int i = result.size() - 1; i > 0; --i)
+        if (result[i].kind == "separator" && result[i - 1].kind == "separator")
+            result.removeAt(result[i].key.startsWith("sep:user:") ? i - 1 : i);
+    if (!result.isEmpty() && result.last().kind == "separator")
+        result.removeLast();
     return result;
 }
 

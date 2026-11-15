@@ -89,6 +89,8 @@ Window {
         function onCountChanged() { win.refreshKinds() }
     }
 
+    // Bumped by a cell whose width changes, so the layout below is redone.
+    property int layoutRev: 0
     readonly property real sepWidth: t.separator === "gap" ? Math.round(s * 0.35) : Math.max(10, Math.round(s * 0.3))
     property real hoverU: -1          // pointer position along the dock, in logical coordinates
     property real zoomAmount: 0       // 0..1, eases in and out with the hover
@@ -98,12 +100,14 @@ Window {
     // to the pointer, and the row is shifted so that the point under the
     // pointer stays under it.
     readonly property var geom: {
+        layoutRev
         const n = kinds.length
         const fw = along
         const base = []
         let total = 0
         for (let i = 0; i < n; ++i) {
-            const w = (kinds[i] === "separator" ? sepWidth : s) + spacing
+            const cellItem = items.itemAt(i)
+            const w = (kinds[i] === "separator" ? sepWidth : s * (cellItem ? cellItem.widthFactor : 1)) + spacing
             base.push(w)
             total += w
         }

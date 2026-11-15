@@ -7,16 +7,16 @@ Item {
     property var app
     readonly property bool desklet: mode === "desklet"
     readonly property size deskletSize: Qt.size(180, 120)
+    // Text follows the theme, so light themes stay readable.
+    readonly property color fg: app ? app.color(config.theme.textColor, "#f2f2f2") : "#f2f2f2"
     readonly property real level: Math.max(0, system.battery)
-    readonly property color tint: !system.hasBattery ? "#8a8a95" : system.charging ? "#4cd964" : level < 0.15 ? "#ff4d4f" : level < 0.3 ? "#ffb020" : "#e8e8ee"
+    readonly property color tint: !system.hasBattery ? "#8a8a95" : system.charging ? "#4cd964" : level < 0.15 ? "#ff4d4f" : level < 0.3 ? "#ffb020" : fg
 
     readonly property string title: !system.hasBattery ? qsTr("No battery — on mains power")
         : system.charging ? qsTr("Battery %1% · charging").arg(Math.round(level * 100))
         : qsTr("Battery %1%").arg(Math.round(level * 100))
 
     function activate(button) {}
-
-    AppletTile { visible: !applet.desklet; app: applet.app; tint: "#1a1a20" }
 
     Item {
         id: body
@@ -66,7 +66,7 @@ Item {
         anchors.top: body.bottom
         anchors.topMargin: applet.desklet ? 8 : applet.height * 0.03
         text: system.hasBattery ? Math.round(applet.level * 100) + "%" : qsTr("AC")
-        color: "white"
+        color: applet.fg
         font.pixelSize: applet.desklet ? 20 : applet.width * 0.18
         font.weight: Font.DemiBold
     }

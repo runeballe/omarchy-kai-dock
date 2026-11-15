@@ -40,11 +40,14 @@ SettingsPage {
                     Layout.fillWidth: true
                     spacing: 12
                     Item {
-                        Layout.preferredWidth: 44
+                        // As wide as the applet is in the dock.
+                        readonly property real factor: preview.item && preview.item.dockWidthFactor ? preview.item.dockWidthFactor : 1
+                        Layout.preferredWidth: 44 * factor
                         Layout.preferredHeight: 44
                         AppletView {
-                            width: 44 * 1.8
-                            height: width
+                            id: preview
+                            width: 44 * 1.8 * parent.factor
+                            height: 44 * 1.8
                             scale: 1 / 1.8
                             transformOrigin: Item.TopLeft
                             appletId: card.id

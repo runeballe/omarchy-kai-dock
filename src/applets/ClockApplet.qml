@@ -12,8 +12,21 @@ Item {
     readonly property bool h24: config.values.clock24h
     readonly property string clockFont: config.values.clockFont
     readonly property real clockFontScale: config.values.clockFontScale > 0 ? config.values.clockFontScale : 1.0
-    readonly property string fontCss: clockFont.length > 0 ? clockFont : ""
     readonly property size deskletSize: Qt.size(230, analog ? 270 : 150)
+
+    // Text follows the theme, so light themes stay readable.
+    readonly property color fg: app ? app.color(config.theme.textColor, "#f2f2f2") : "#f2f2f2"
+
+    // Digits are wider than an icon, most of all with seconds, so in the dock
+    // the digital clock asks for a wider cell. Measured on zeros so the cell
+    // doesn't twitch as the digits change.
+    TextMetrics {
+        id: digits
+        font: digitalText.font
+        text: applet.timeText.replace(/[0-9]/g, "0")
+    }
+    readonly property real dockWidthFactor: !desklet && !analog && height > 0
+        ? Math.max(1, (digits.advanceWidth + height * 0.16) / height) : 1
 
     property date now: new Date()
     Timer {
@@ -61,15 +74,16 @@ Item {
         anchors.centerIn: parent
         spacing: 0
         Text {
+            id: digitalText
             anchors.horizontalCenter: parent.horizontalCenter
             text: applet.timeText
-            color: "white"
+            color: applet.fg
             Binding on font.family {
                 when: applet.clockFont.length > 0
                 value: applet.clockFont
                 restoreMode: Binding.RestoreBindingOrValue
             }
-            font.pixelSize: applet.desklet ? 54 * applet.clockFontScale : applet.width * 0.27 * applet.clockFontScale
+            font.pixelSize: applet.desklet ? 54 * applet.clockFontScale : applet.height * 0.27 * applet.clockFontScale
             font.weight: Font.DemiBold
             font.features: { "tnum": 1 }
         }
@@ -78,7 +92,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: applet.dateText
             color: applet.app ? applet.app.accent : "#FFD60A"
-            font.pixelSize: applet.desklet ? 16 : applet.width * 0.15
+            font.pixelSize: applet.desklet ? 16 : applet.height * 0.15
         }
     }
 
@@ -176,7 +190,7 @@ Item {
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: applet.timeText
-            color: "white"
+            color: applet.fg
             Binding on font.family {
                 when: applet.clockFont.length > 0
                 value: applet.clockFont
@@ -188,7 +202,7 @@ Item {
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: applet.dateText
-            color: Qt.rgba(1, 1, 1, 0.7)
+            color: Qt.rgba(applet.fg.r, applet.fg.g, applet.fg.b, 0.7)
             font.pixelSize: 13
         }
     }

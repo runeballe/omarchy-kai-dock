@@ -26,6 +26,12 @@ Item {
     readonly property real sc: valid ? g.scale[index] : 1
     readonly property real s: dock.s
     readonly property var t: dock.t
+    // A docked applet may ask for a cell wider than an icon (the digital
+    // clock). Along a side edge the cells stack, so they stay icon-sized.
+    readonly property real appletFactor: kind === "applet" && appletView.item && appletView.item.dockWidthFactor
+        ? appletView.item.dockWidthFactor : 1
+    readonly property real widthFactor: dock.vertical ? 1 : appletFactor
+    onWidthFactorChanged: if (dock.layoutRev !== undefined) dock.layoutRev++
 
     x: valid ? dock.frameX(g.u[index], g.w[index]) : 0
     width: valid ? g.w[index] : 0
@@ -101,8 +107,9 @@ Item {
                 // stay sharp when the dock magnifies them.
                 Item {
                     visible: cell.kind === "applet"
-                    width: cell.s * dock.zoomFactor
-                    height: width
+                    x: (cell.s - cell.s * cell.appletFactor) / 2
+                    width: cell.s * dock.zoomFactor * cell.appletFactor
+                    height: cell.s * dock.zoomFactor
                     scale: 1 / dock.zoomFactor
                     transformOrigin: Item.TopLeft
                     AppletView {
