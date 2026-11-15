@@ -33,6 +33,7 @@ const char *kUsage = R"(kai — a dock for Hyprland
 Usage:
   kai                      Start the dock (or open Settings if it's running)
   kai settings             Open Settings in the running dock
+  kai apps                 Open or close the app launcher
   kai quit                 Quit the running dock
   kai --software           Start with the software (CPU) renderer this time
   kai --opengl             Start with the OpenGL renderer this time
@@ -171,6 +172,7 @@ int main(int argc, char *argv[]) {
     context->setContextProperty("shell", &shell);
     context->setContextProperty("fonts", new Fonts());
     context->setContextProperty("openSettingsOnStart", command == "settings");
+    context->setContextProperty("openAppsOnStart", command == "apps");
     engine.load(QUrl("qrc:/Main.qml"));
     if (engine.rootObjects().isEmpty())
         return 1;
@@ -179,6 +181,8 @@ int main(int argc, char *argv[]) {
     QObject::connect(&shell, &Shell::message, root, [root](const QString &text) {
         if (text == "quit")
             QCoreApplication::quit();
+        else if (text == "apps")
+            QMetaObject::invokeMethod(root, "toggleApps");
         else
             QMetaObject::invokeMethod(root, "openSettings");
     });

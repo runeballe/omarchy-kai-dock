@@ -53,6 +53,7 @@ one click and fine-tune in a settings window.
 ```sh
 kai                       # start the dock, or open Settings if it's running
 kai settings              # open Settings
+kai apps                  # open or close the app launcher
 kai quit                  # stop the dock
 kai --software            # start with the CPU renderer this once
 kai theme list [--json]

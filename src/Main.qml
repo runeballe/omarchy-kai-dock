@@ -36,6 +36,15 @@ QtObject {
 
     property Component settingsComponent: Component { SettingsWindow {} }
 
+    // The app launcher, made the first time it's asked for.
+    property var appGrid: null
+    property Component appGridComponent: Component { AppGrid {} }
+    function toggleApps() {
+        if (!appGrid)
+            appGrid = appGridComponent.createObject(null, { app: app })
+        appGrid.toggle()
+    }
+
     property DockWindow dock: DockWindow { app: app }
 
     // A joined string only changes when the set of desklets does, so the
@@ -66,5 +75,7 @@ QtObject {
         weather.setLocation(config.values.weatherCity, config.values.weatherUnits)
         if (openSettingsOnStart)
             openSettings()
+        if (openAppsOnStart)
+            toggleApps()
     }
 }

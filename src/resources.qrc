@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>AppletInfo.js</file>
+        <file>AppGrid.qml</file>
         <file>AppletView.qml</file>
         <file>DeskletWindow.qml</file>
         <file>DockIndicator.qml</file>

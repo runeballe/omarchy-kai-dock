@@ -39,6 +39,8 @@ public:
     Q_INVOKABLE void setupDesklet(QWindow *window, int x, int y, const QString &layer, const QString &screen);
     Q_INVOKABLE void moveDesklet(QWindow *window, int x, int y);
     Q_INVOKABLE void setDeskletLayer(QWindow *window, const QString &layer);
+    // A full-screen overlay that takes the keyboard, on the screen in use.
+    Q_INVOKABLE void setupLauncher(QWindow *window);
 
     Q_INVOKABLE void run(const QString &command) const;
     Q_INVOKABLE bool hasCommand(const QString &name) const;

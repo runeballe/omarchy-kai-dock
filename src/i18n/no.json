@@ -166,6 +166,8 @@
   "Unpin": "Løsne",
   "Add an app": "Legg til et program",
   "Search installed apps": "Søk i installerte programmer",
+  "Search apps": "Søk i programmer",
+  "No apps match “%1”.": "Ingen programmer passer med «%1».",
   "Pin": "Fest",
   "Rendering & system": "Gjengivelse og system",
   "Rendering": "Gjengivelse",

@@ -1,6 +1,6 @@
 import QtQuick
 
-// A grid glyph that opens the app launcher.
+// Opens the app launcher.
 Item {
     id: applet
     property string mode: "dock"
@@ -11,9 +11,10 @@ Item {
     readonly property size deskletSize: Qt.size(150, 150)
 
     function activate(button) {
-        // The Omarchy menu doubles as the app launcher; wofi is the fallback
-        // (the omarchy shell's own dock app grid died with omarchy.dock).
-        if (shell.hasCommand("omarchy-menu")) shell.run("omarchy-menu toggle")
+        // kai's own app grid. Omarchy's lives in its dock plugin, which is off
+        // when kai is the dock; the rest are fallbacks for an embedded applet.
+        if (app && app.toggleApps) app.toggleApps()
+        else if (shell.hasCommand("omarchy-menu")) shell.run("omarchy-menu toggle")
         else if (shell.hasCommand("wofi")) shell.run("wofi --show drun")
         else if (shell.hasCommand("fuzzel")) shell.run("fuzzel")
         else if (shell.hasCommand("walker")) shell.run("walker")
