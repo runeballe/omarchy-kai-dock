@@ -1,0 +1,159 @@
+.Dd November 15, 2026
+.Dt KAI 1
+.Os
+.Sh NAME
+.Nm kai
+.Nd a dock for Hyprland
+.Sh SYNOPSIS
+.Nm
+.Op command
+.Op Fl Fl replace
+.Op Fl Fl software | Fl Fl opengl
+.Nm
+.Cm settings
+.Nm
+.Cm quit
+.Nm
+.Cm theme
+.Cm list | install Ar FILE | apply Ar ID
+.Op Fl Fl json
+.Nm
+.Fl Fl version | Fl Fl help
+.Sh DESCRIPTION
+.Nm
+is a classic, full-featured dock for the
+.Xr hyprland 1
+compositor, in the spirit of Cairo-Dock: a floating shelf along one screen
+edge with parabolic zoom, reflections and icon animations, pinned launchers
+and running apps, live applets that can also float on the desktop as
+desklets, and one-click themes with fine-tuning.
+.Pp
+It speaks the layer-shell protocol, follows the Omarchy accent and
+Hyprland's rounding unless a theme overrides them, and talks to Hyprland
+over its IPC sockets for the window list and for focus, minimize, close
+and launch dispatching.
+.Sh COMMANDS
+.Bl -tag -width Ds
+.It (no command)
+Start the dock. If a dock is already running, Settings open in the running
+instance instead.
+.It Cm settings
+Open Settings in the running dock.
+.It Cm quit
+Quit the running dock.
+.It Cm theme Cm list Op Fl Fl json
+List installed themes; the applied one is marked.
+.It Cm theme Cm install Ar FILE Op Fl Fl json
+Install a theme from a JSON file (an https address or a path also works
+from Settings).
+.It Cm theme Cm apply Ar ID Op Fl Fl json
+Apply an installed theme.
+.It Fl Fl replace
+Start a new dock instead of talking to the running one.
+.It Fl Fl software
+Start with the software (CPU) renderer this run; useful when the GPU
+driver crashes or flickers. Persisted in the config until the other flag
+is used.
+.It Fl Fl opengl
+Start with the OpenGL (hardware) renderer this run.
+.It Fl Fl version , Fl Fl help
+Print the version or the usage text.
+.El
+.Pp
+The
+.Cm theme
+commands run without a display, so scripts and agents can use them.
+.Sh CONFIGURATION
+Settings live in
+.Pa ~/.config/kai/config.json
+and are edited through the Settings window, which opens with
+.Nm settings
+or by running
+.Nm
+again while the dock runs. Themes live in
+.Pa ~/.local/share/kai/themes/
+and the current one is stored as
+.Dq theme
+with per-setting
+.Dq themeOverrides
+on top. The interface language follows
+.Pa ~/.config/omarchy/language .
+.Pp
+Key settings:
+.Bl -tag -width "currentWorkspaceOnly"
+.It Cm edge , Cm screen
+Which screen edge the dock sits on and which monitor.
+.It Cm view
+"floating" shelf, full-width "panel", or icons standing on a 3D "plane";
+empty lets the theme decide.
+.It Cm iconSize , Cm zoom , Cm zoomRange , Cm spacing , Cm margin
+Icon size in pixels, magnification and its reach, icon spacing and the
+gap from the screen edge.
+.It Cm layer , Cm autohide , Cm autohideDelay , Cm reserveSpace
+Layer-shell layer, whether the dock slides away when the pointer leaves
+and after how long, and whether maximized windows keep clear of it.
+.It Cm clickAnimation , Cm hoverAnimation , Cm launchAnimation , Cm attentionAnimation , Cm animationSpeed
+Which animation plays when an icon is clicked, when the pointer enters
+it, while an app starts, when a window wants attention, and how fast
+they run. One of bounce, pulse, flip, wobble, blink or none.
+.It Cm separators
+List of dock elements after which a separator line is drawn: the string
+.Ql launcher
+for the apps launcher or a pinned app id such as
+.Ql firefox .
+Empty keeps the default lines.
+.It Cm showRunning , Cm currentWorkspaceOnly , Cm clickActiveMinimizes
+Whether unpinned running apps appear, only from the current workspace,
+and whether clicking the focused app minimizes it.
+.It Cm clockAnalog , Cm clock24h , Cm clockSeconds , Cm clockFont , Cm clockFontScale
+Clock face: analog or digital, 12 or 24 hours, seconds, and the digital
+face's font family and size multiplier.
+.It Cm weatherCity , Cm weatherUnits
+The Open-Meteo city and metric or imperial units.
+.El
+.Sh APPLETS
+Six applets can live in the dock or on the desktop as desklets: the
+.Ql apps
+launcher, a
+.Ql clock
+that opens a month calendar when clicked,
+.Ql weather
+with a three-day forecast,
+.Ql sysmon
+with CPU and memory graphs,
+.Ql battery ,
+and the
+.Ql trash .
+Detach an applet from its right-click menu to drop it on the desktop;
+hover a desklet to put it back. Dragging an applet reorders the dock.
+The apps launcher opens the Omarchy menu, with wofi, fuzzel and walker
+as fallbacks.
+.Sh AUTOSTART
+Add to
+.Pa ~/.config/hypr/autostart.lua :
+.Bd -literal -offset indent
+o.launch_on_start("/home/user/Work/kai/build/kai")
+.Ed
+.Pp
+(adjust the path to where kai is installed) and the dock starts with the
+compositor.
+.Sh FILES
+.Bl -tag -width "~/.local/share/kai/themes/" -compact
+.It Pa ~/.config/kai/config.json
+Settings.
+.It Pa ~/.local/share/kai/themes/
+Installed themes.
+.It Pa ~/.config/omarchy/language
+Interface language.
+.El
+.Sh EXIT STATUS
+.Nm
+exits 0 on success, 1 on a failed command such as an unknown theme.
+.Sh SEE ALSO
+.Xr hyprland 1 ,
+.Xr wofi 1 ,
+Project home:
+.Lk https://github.com/runeballe/omarchy-kai-dock
+.Sh AUTHORS
+.An Rune Balstad ,
+under the MIT license.

@@ -23,4 +23,5 @@ package() {
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 "$startdir/kai.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/kai.svg"
   install -Dm644 "$startdir/kai.desktop" "$pkgdir/usr/share/applications/kai.desktop"
+  install -Dm644 "$startdir/man/kai.1" "$pkgdir/usr/share/man/man1/kai.1"
 }
