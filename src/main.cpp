@@ -184,7 +184,8 @@ int main(int argc, char *argv[]) {
         else if (text == "apps")
             QMetaObject::invokeMethod(root, "toggleApps");
         else
-            QMetaObject::invokeMethod(root, "openSettings");
+            // openSettings(page) takes one argument, so the call must pass one.
+            QMetaObject::invokeMethod(root, "openSettings", Q_ARG(QVariant, QVariant()));
     });
 
     const int code = app.exec();

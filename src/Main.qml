@@ -45,7 +45,27 @@ QtObject {
         appGrid.toggle()
     }
 
-    property DockWindow dock: DockWindow { app: app }
+    // The dock and desklets are rebuilt whenever a screen comes or goes: the
+    // compositor drops a layer surface whose output disappears (an unplugged
+    // or sleeping monitor), and a dropped surface is never shown again.
+    property int surfaceGeneration: 0
+    property Timer screenSettle: Timer {
+        interval: 800
+        onTriggered: app.surfaceGeneration++
+    }
+    property Connections screenWatch: Connections {
+        target: shell
+        function onScreensChanged() { app.screenSettle.restart() }
+    }
+
+    property var dock: null
+    property Component dockComponent: Component { DockWindow {} }
+    function rebuildDock() {
+        if (dock)
+            dock.destroy()
+        dock = dockComponent.createObject(null, { app: app })
+    }
+    onSurfaceGenerationChanged: rebuildDock()
 
     // A joined string only changes when the set of desklets does, so the
     // windows aren't torn down on every unrelated settings change.
@@ -58,7 +78,8 @@ QtObject {
     }
 
     property Instantiator desklets: Instantiator {
-        model: app.deskletKey === "" ? [] : app.deskletKey.split(",")
+        // Reading surfaceGeneration recreates them after a screen change.
+        model: { app.surfaceGeneration; return app.deskletKey === "" ? [] : app.deskletKey.split(",") }
         delegate: DeskletWindow {
             required property string modelData
             appletId: modelData
@@ -72,6 +93,7 @@ QtObject {
     }
 
     Component.onCompleted: {
+        rebuildDock()
         weather.setLocation(config.values.weatherCity, config.values.weatherUnits)
         if (openSettingsOnStart)
             openSettings()
