@@ -22,8 +22,11 @@ Item {
     required property bool launching
 
     readonly property var g: dock.geom
-    readonly property bool valid: index < g.u.length
-    readonly property real sc: valid ? g.scale[index] : 1
+    // A row can exist for a moment before the layout has a slot for it (or
+    // after it's gone), so check every array the cell reads from.
+    readonly property bool valid: index >= 0 && index < g.u.length && index < g.w.length
+                                  && index < g.scale.length
+    readonly property real sc: valid ? (g.scale[index] ?? 1) : 1
     readonly property real s: dock.s
     readonly property var t: dock.t
     // A docked applet may ask for a cell wider than an icon (the digital
@@ -33,7 +36,7 @@ Item {
     readonly property real widthFactor: dock.vertical ? 1 : appletFactor
     onWidthFactorChanged: if (dock.layoutRev !== undefined) dock.layoutRev++
 
-    x: valid ? dock.frameX(g.u[index], g.w[index]) : 0
+    x: valid ? (dock.frameX(g.u[index], g.w[index]) ?? 0) : 0
     width: valid ? g.w[index] : 0
     height: parent ? parent.height : 0
 
