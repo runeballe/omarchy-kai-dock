@@ -33,4 +33,5 @@ SOURCES += \
     src/weather.cpp \
     src/windowkiller.cpp
 
+include(shaders.pri)
 RESOURCES += src/resources.qrc

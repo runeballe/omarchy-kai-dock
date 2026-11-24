@@ -21,6 +21,7 @@ SettingsPage {
     readonly property var animations: [
         { text: qsTr("Bounce"), value: "bounce" }, { text: qsTr("Pulse"), value: "pulse" },
         { text: qsTr("Flip"), value: "flip" }, { text: qsTr("Wobble"), value: "wobble" },
+        { text: qsTr("Wave"), value: "wave" }, { text: qsTr("Rotation"), value: "rotate" },
         { text: qsTr("Blink"), value: "blink" }, { text: qsTr("None"), value: "none" }]
     // One toggle per fixed dock element: the launcher and each pinned app.
     readonly property var separatorChoices: {

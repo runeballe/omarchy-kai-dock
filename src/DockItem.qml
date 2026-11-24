@@ -46,6 +46,8 @@ Item {
     property real flip: 0
     property real wobble: 0
     property real blink: 1
+    property real spin: 0
+    property real wave: 0
     opacity: dock.dragging && dock.dragIndex === index ? 0.35 : 1
 
     readonly property real iconY: height - dock.iconBase - s
@@ -83,8 +85,27 @@ Item {
                 anchors.fill: parent
                 transform: [
                     Rotation { origin.x: visual.width / 2; origin.y: visual.height / 2; axis { x: 0; y: 1; z: 0 } angle: cell.flip },
-                    Rotation { origin.x: visual.width / 2; origin.y: visual.height; angle: cell.wobble }
+                    Rotation { origin.x: visual.width / 2; origin.y: visual.height; angle: cell.wobble },
+                    Rotation { origin.x: visual.width / 2; origin.y: visual.height / 2; angle: cell.spin },
+                    // Without the GPU the wave is a soft squash and stretch.
+                    Scale {
+                        readonly property real k: app.fancy ? 0 : 0.14 * Math.sin(Math.PI * cell.wave) * Math.sin(6 * Math.PI * cell.wave)
+                        origin.x: visual.width / 2; origin.y: visual.height
+                        xScale: 1 + k; yScale: 1 - k
+                    }
                 ]
+                // With the GPU the icon itself ripples (shaders/wave.vert).
+                layer.enabled: app.fancy && cell.wave > 0
+                layer.smooth: true
+                layer.effect: ShaderEffect {
+                    property real phase: cell.wave
+                    property real amplitude: 0.07
+                    property real w: width
+                    property real h: height
+                    mesh: GridMesh { resolution: Qt.size(16, 16) }
+                    vertexShader: "qrc:/shaders/wave.vert.qsb"
+                    fragmentShader: "qrc:/shaders/wave.frag.qsb"
+                }
 
                 Image {
                     id: image
@@ -249,6 +270,14 @@ Item {
         NumberAnimation { target: cell; property: "pulse"; to: 1; duration: 250 * cell.d; easing.type: Easing.OutBack }
     }
     NumberAnimation {
+        id: spinAnim
+        target: cell; property: "spin"; from: 0; to: 360; duration: 800 * cell.d; easing.type: Easing.InOutCubic
+    }
+    NumberAnimation {
+        id: waveAnim
+        target: cell; property: "wave"; from: 0; to: 1; duration: 900 * cell.d; easing.type: Easing.Linear
+    }
+    NumberAnimation {
         id: flipAnim
         target: cell; property: "flip"; from: 0; to: 360; duration: 700 * cell.d; easing.type: Easing.InOutCubic
     }
@@ -274,6 +303,8 @@ Item {
         case "flip": return flipAnim
         case "wobble": return wobbleAnim
         case "blink": return blinkAnim
+        case "rotate": return spinAnim
+        case "wave": return waveAnim
         }
         return null
     }
@@ -284,18 +315,19 @@ Item {
         a.restart()
     }
     function stopAll() {
-        for (const a of [bounceAnim, pulseAnim, flipAnim, wobbleAnim, blinkAnim]) {
+        for (const a of [bounceAnim, pulseAnim, flipAnim, wobbleAnim, blinkAnim, spinAnim, waveAnim]) {
             a.loops = 1
             a.complete()
         }
-        bounce = 0; pulse = 1; flip = 0; wobble = 0; blink = 1
+        bounce = 0; pulse = 1; flip = 0; wobble = 0; blink = 1; spin = 0; wave = 0
     }
     function playClick() { play(dock.v.clickAnimation, 1) }
 
     // Hover runs at most one animation, never on top of a launch/attention loop.
     function playHover() {
         if (loopState !== "") return
-        if (bounceAnim.running || pulseAnim.running || flipAnim.running || wobbleAnim.running || blinkAnim.running)
+        if (bounceAnim.running || pulseAnim.running || flipAnim.running || wobbleAnim.running || blinkAnim.running
+            || spinAnim.running || waveAnim.running)
             return
         play(dock.v.hoverAnimation, 1)
     }

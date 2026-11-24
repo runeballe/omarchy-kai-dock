@@ -268,5 +268,7 @@
   "Class: %1": "Klasse: %1",
   "Initial class: %1": "Opprinnelig klasse: %1",
   "Won't kill %1: it keeps the desktop running.": "Dreper ikke %1: den holder skrivebordet i gang.",
-  "Killed %1 (pid %2).": "Drepte %1 (pid %2)."
+  "Killed %1 (pid %2).": "Drepte %1 (pid %2).",
+  "Wave": "Bølge",
+  "Rotation": "Rotasjon"
 }
