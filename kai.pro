@@ -16,7 +16,8 @@ HEADERS += \
     src/fonts.h \
     src/theme.h \
     src/translator.h \
-    src/weather.h
+    src/weather.h \
+    src/windowkiller.h
 
 SOURCES += \
     src/main.cpp \
@@ -29,6 +30,7 @@ SOURCES += \
     src/sysinfo.cpp \
     src/theme.cpp \
     src/translator.cpp \
-    src/weather.cpp
+    src/weather.cpp \
+    src/windowkiller.cpp
 
 RESOURCES += src/resources.qrc

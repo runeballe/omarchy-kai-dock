@@ -14,7 +14,8 @@ Loader {
         weather: "qrc:/applets/WeatherApplet.qml",
         sysmon: "qrc:/applets/SysmonApplet.qml",
         battery: "qrc:/applets/BatteryApplet.qml",
-        trash: "qrc:/applets/TrashApplet.qml"
+        trash: "qrc:/applets/TrashApplet.qml",
+        windowskiller: "qrc:/applets/WindowsKillerApplet.qml"
     })
     source: sources[appletId] || ""
     onLoaded: {

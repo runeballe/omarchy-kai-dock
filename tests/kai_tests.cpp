@@ -21,6 +21,7 @@
 #include "theme.h"
 #include "translator.h"
 #include "weather.h"
+#include "windowkiller.h"
 
 static void write(const QString &path, const QByteArray &contents) {
     QDir().mkpath(QFileInfo(path).absolutePath());
@@ -658,6 +659,34 @@ private slots:
         delete clock;
         clockConfig->set("clockFont", "");
         clockConfig->set("clockFontScale", 1.0);
+    }
+
+    void windowKillerPicksTheWindowUnderThePoint() {
+        const QByteArray monitors = "[{\"activeWorkspace\":{\"id\":1},\"specialWorkspace\":{\"id\":0}}]";
+        const QByteArray clients = "["
+            "{\"address\":\"0xa\",\"class\":\"tiled\",\"initialClass\":\"tiled\",\"pid\":10,\"workspace\":{\"id\":1},\"at\":[0,0],\"size\":[800,600],\"floating\":false,\"focusHistoryID\":0},"
+            "{\"address\":\"0xb\",\"class\":\"float\",\"initialClass\":\"float\",\"pid\":20,\"workspace\":{\"id\":1},\"at\":[100,100],\"size\":[200,200],\"floating\":true,\"focusHistoryID\":3},"
+            "{\"address\":\"0xc\",\"class\":\"elsewhere\",\"pid\":30,\"workspace\":{\"id\":2},\"at\":[0,0],\"size\":[800,600],\"floating\":true,\"focusHistoryID\":1}]";
+        const QByteArray layers = "{\"M\":{\"levels\":{\"2\":[{\"namespace\":\"kai-dock\",\"x\":0,\"y\":500,\"w\":800,\"h\":100}]}}}";
+        QCOMPARE(WindowKiller::clientAt(clients, monitors, layers, 150, 150).value("class").toString(), QString("float"));
+        QCOMPARE(WindowKiller::clientAt(clients, monitors, layers, 50, 50).value("pid").toLongLong(), 10LL);
+        QVERIFY(WindowKiller::clientAt(clients, monitors, layers, 50, 550).isEmpty());  // the dock cancels
+        QVERIFY(WindowKiller::clientAt(clients, monitors, layers, 900, 50).isEmpty());  // nothing there
+    }
+
+    void windowKillerReadsProcessInfo() {
+        QTemporaryDir dir;
+        write(dir.filePath("42/cmdline"), QByteArray("firefox\0--new-window\0", 21));
+        write(dir.filePath("42/stat"), "42 (Web Content) S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 1000 0 0\n");
+        write(dir.filePath("uptime"), "1000.00 50.00\n");
+        const QVariantMap info = WindowKiller::processInfo(42, dir.path());
+        QCOMPARE(info.value("command").toString(), QString("firefox --new-window"));
+        QVERIFY(info.contains("uptime"));
+        QCOMPARE(WindowKiller::formatUptime(3725), QString("1h 2m"));
+        QCOMPARE(WindowKiller::formatUptime(90061), QString("1d 1h 1m"));
+        QVERIFY(WindowKiller::isProtected(1, "systemd"));
+        QVERIFY(WindowKiller::isProtected(5000, "Hyprland"));
+        QVERIFY(!WindowKiller::isProtected(5000, "firefox"));
     }
 
 private:

@@ -64,7 +64,7 @@ Window {
         anchors.fill: parent
         hoverEnabled: true
         preventStealing: true
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
         property point origin
         property bool moved: false
         cursorShape: pressed && moved ? Qt.ClosedHandCursor : Qt.ArrowCursor

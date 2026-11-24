@@ -25,6 +25,7 @@
 #include "fonts.h"
 #include "translator.h"
 #include "weather.h"
+#include "windowkiller.h"
 
 namespace {
 
@@ -169,6 +170,8 @@ int main(int argc, char *argv[]) {
     context->setContextProperty("dockModel", &dock);
     context->setContextProperty("system", &system);
     context->setContextProperty("weather", &weather);
+    WindowKiller windowKiller(&hyprland);
+    context->setContextProperty("windowKiller", &windowKiller);
     context->setContextProperty("shell", &shell);
     context->setContextProperty("fonts", new Fonts());
     context->setContextProperty("openSettingsOnStart", command == "settings");
