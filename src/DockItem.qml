@@ -146,6 +146,49 @@ Item {
                     }
                 }
             }
+
+            // Quick-info in the top corner, progress along the foot; drawn
+            // outside the animated visual so they stay readable while it moves.
+            Rectangle {
+                id: infoPill
+                visible: cell.badge.info !== ""
+                readonly property real h: Math.max(10, cell.s * 0.3)
+                height: h
+                width: Math.max(h, infoText.implicitWidth + h * 0.55)
+                radius: h / 2
+                x: Math.min(upright.width - width * 0.6, upright.width - width + h * 0.25)
+                y: -h * 0.2
+                color: app.accent
+                border.width: 1
+                border.color: Qt.rgba(0, 0, 0, 0.35)
+                Text {
+                    id: infoText
+                    anchors.centerIn: parent
+                    text: cell.badge.info
+                    color: omarchy.accentForeground
+                    font.pixelSize: Math.max(8, Math.round(infoPill.h * 0.68))
+                    font.weight: Font.Bold
+                }
+            }
+            Rectangle {
+                visible: cell.badge.progress >= 0
+                x: upright.width * 0.1
+                width: upright.width * 0.8
+                height: Math.max(3, cell.s * 0.09)
+                y: upright.height - height - upright.height * 0.04
+                radius: height / 2
+                color: Qt.rgba(0, 0, 0, 0.55)
+                border.width: 1
+                border.color: Qt.rgba(1, 1, 1, 0.25)
+                Rectangle {
+                    x: 1; y: 1
+                    height: parent.height - 2
+                    width: Math.max(height, (parent.width - 2) * cell.badge.progress)
+                    radius: height / 2
+                    color: app.accent
+                    Behavior on width { NumberAnimation { duration: 200 } }
+                }
+            }
         }
 
         // A ghost that grows and fades for the pulse animation.
@@ -241,7 +284,7 @@ Item {
 
     // Attention: an urgent window keeps the icon moving until it's seen.
     Rectangle {
-        visible: cell.urgent
+        visible: cell.urgent && cell.badge.info === ""
         width: cell.s * 0.22
         height: width
         radius: width / 2
@@ -254,6 +297,17 @@ Item {
 
     // --- Animations --------------------------------------------------------------
     readonly property real d: 1 / dock.speed
+
+    // Quick-info and progress: from the app (Unity LauncherEntry), kai's API,
+    // or the applet itself.
+    readonly property var badge: {
+        const e = badges.entries[kind === "applet" ? "applet:" + appletId : appId] || {}
+        const a = kind === "applet" ? appletView.item : null
+        const info = e.info || (a && a.quickInfo ? a.quickInfo : "")
+        const progress = e.progress !== undefined && e.progress >= 0 ? e.progress
+                       : a && a.progress !== undefined && a.progress >= 0 ? a.progress : -1
+        return { info: info, progress: progress, urgent: !!e.urgent }
+    }
 
     SequentialAnimation {
         id: bounceAnim
@@ -333,7 +387,7 @@ Item {
     }
 
     // Looping states: a launch in progress, a window asking for attention.
-    readonly property string loopState: launching ? "launch" : urgent ? "attention" : ""
+    readonly property string loopState: launching ? "launch" : (urgent || badge.urgent) ? "attention" : ""
     onLoopStateChanged: {
         stopAll()
         if (loopState === "launch") play(dock.v.launchAnimation, Animation.Infinite)

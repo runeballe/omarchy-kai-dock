@@ -27,6 +27,7 @@
 #include "weather.h"
 #include "windowkiller.h"
 #include "audio.h"
+#include "badges.h"
 
 namespace {
 
@@ -175,6 +176,8 @@ int main(int argc, char *argv[]) {
     context->setContextProperty("windowKiller", &windowKiller);
     Audio audio;
     context->setContextProperty("audio", &audio);
+    Badges badges;
+    context->setContextProperty("badges", &badges);
     context->setContextProperty("shell", &shell);
     context->setContextProperty("fonts", new Fonts());
     context->setContextProperty("openSettingsOnStart", command == "settings");

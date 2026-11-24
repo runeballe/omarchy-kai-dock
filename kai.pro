@@ -1,4 +1,4 @@
-QT += core gui qml quick quickcontrols2 network
+QT += core gui qml quick quickcontrols2 network dbus
 CONFIG += c++17 release
 TARGET = kai
 TEMPLATE = app
@@ -18,7 +18,8 @@ HEADERS += \
     src/translator.h \
     src/weather.h \
     src/windowkiller.h \
-    src/audio.h
+    src/audio.h \
+    src/badges.h
 
 SOURCES += \
     src/main.cpp \
@@ -33,7 +34,8 @@ SOURCES += \
     src/translator.cpp \
     src/weather.cpp \
     src/windowkiller.cpp \
-    src/audio.cpp
+    src/audio.cpp \
+    src/badges.cpp
 
 include(shaders.pri)
 RESOURCES += src/resources.qrc

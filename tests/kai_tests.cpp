@@ -23,6 +23,7 @@
 #include "weather.h"
 #include "windowkiller.h"
 #include "audio.h"
+#include "badges.h"
 
 static void write(const QString &path, const QByteArray &contents) {
     QDir().mkpath(QFileInfo(path).absolutePath());
@@ -660,6 +661,24 @@ private slots:
         delete clock;
         clockConfig->set("clockFont", "");
         clockConfig->set("clockFontScale", 1.0);
+    }
+
+    void badgesFollowUnityAndScripts() {
+        QCOMPARE(Badges::keyForUri("application://org.telegram.desktop.desktop"), QString("org.telegram.desktop"));
+        Badges::State st;
+        Badges::applyUnity(st, {{"count", 7}, {"count-visible", true}});
+        QCOMPARE(Badges::present(st).value("info").toString(), QString("7"));
+        QCOMPARE(Badges::present(st).value("progress").toDouble(), -1.0);
+        Badges::applyUnity(st, {{"progress", 0.4}, {"progress-visible", true}, {"count-visible", false}});
+        QCOMPARE(Badges::present(st).value("info").toString(), QString());
+        QCOMPARE(Badges::present(st).value("progress").toDouble(), 0.4);
+        Badges b;
+        QSignalSpy spy(&b, &Badges::changed);
+        b.setInfo("applet:clock", "NEW");
+        QCOMPARE(b.entries().value("applet:clock").toMap().value("info").toString(), QString("NEW"));
+        b.clear("applet:clock");
+        QVERIFY(!b.entries().contains("applet:clock"));
+        QCOMPARE(spy.count(), 2);
     }
 
     void audioParsesWpctl() {
