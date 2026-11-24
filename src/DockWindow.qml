@@ -337,7 +337,16 @@ Window {
                 const row = dockModel.get(i)
                 const delegate = items.itemAt(i)
                 if (row.kind === "applet") {
-                    if (delegate) delegate.activateApplet(mouse.button, i)
+                    if (!delegate) return
+                    // An applet with a double-click action waits a moment so
+                    // a double click doesn't also count as a single one.
+                    const applet = delegate.applet
+                    if (mouse.button === Qt.LeftButton && applet && applet.doubleClick) {
+                        appletClick.row = i
+                        appletClick.restart()
+                    } else {
+                        delegate.activateApplet(mouse.button, i)
+                    }
                     return
                 }
                 if (row.kind !== "app") return
@@ -348,10 +357,25 @@ Window {
                     dockModel.activate(i)
                 }
             }
+            onDoubleClicked: (mouse) => {
+                const i = indexAt(mouse.x)
+                if (i < 0 || i !== appletClick.row) return
+                appletClick.stop()
+                const delegate = items.itemAt(i)
+                if (delegate && delegate.applet && delegate.applet.doubleClick) {
+                    delegate.playClick()
+                    delegate.applet.doubleClick()
+                }
+            }
             onWheel: (wheel) => {
                 const i = indexAt(wheel.x)
                 if (i < 0) return
                 const row = dockModel.get(i)
+                if (row.kind === "applet") {
+                    const d = items.itemAt(i)
+                    if (d && d.applet && d.applet.scroll) d.applet.scroll(wheel.angleDelta.y > 0 ? 1 : -1)
+                    return
+                }
                 if (row.kind === "app" && row.windowCount > 0)
                     dockModel.cycle(i, wheel.angleDelta.y < 0 ? 1 : -1)
             }
@@ -383,6 +407,16 @@ Window {
             readonly property point p: frame.mapToItem(overlay, at.x, at.y)
             x: p.x - width / 2
             y: p.y - height / 2
+        }
+    }
+
+    Timer {
+        id: appletClick
+        property int row: -1
+        interval: 260
+        onTriggered: {
+            const d = items.itemAt(row)
+            if (d) d.activateApplet(Qt.LeftButton, row)
         }
     }
 

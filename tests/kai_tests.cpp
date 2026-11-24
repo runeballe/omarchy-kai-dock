@@ -22,6 +22,7 @@
 #include "translator.h"
 #include "weather.h"
 #include "windowkiller.h"
+#include "audio.h"
 
 static void write(const QString &path, const QByteArray &contents) {
     QDir().mkpath(QFileInfo(path).absolutePath());
@@ -659,6 +660,15 @@ private slots:
         delete clock;
         clockConfig->set("clockFont", "");
         clockConfig->set("clockFontScale", 1.0);
+    }
+
+    void audioParsesWpctl() {
+        double v = 0; bool m = true;
+        QVERIFY(Audio::parse("Volume: 0.45", &v, &m));
+        QCOMPARE(v, 0.45); QVERIFY(!m);
+        QVERIFY(Audio::parse("Volume: 1.00 [MUTED]\n", &v, &m));
+        QCOMPARE(v, 1.0); QVERIFY(m);
+        QVERIFY(!Audio::parse("garbage", &v, &m));
     }
 
     void windowKillerPicksTheWindowUnderThePoint() {

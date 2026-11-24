@@ -17,7 +17,8 @@ HEADERS += \
     src/theme.h \
     src/translator.h \
     src/weather.h \
-    src/windowkiller.h
+    src/windowkiller.h \
+    src/audio.h
 
 SOURCES += \
     src/main.cpp \
@@ -31,7 +32,8 @@ SOURCES += \
     src/theme.cpp \
     src/translator.cpp \
     src/weather.cpp \
-    src/windowkiller.cpp
+    src/windowkiller.cpp \
+    src/audio.cpp
 
 include(shaders.pri)
 RESOURCES += src/resources.qrc

@@ -15,7 +15,8 @@ Loader {
         sysmon: "qrc:/applets/SysmonApplet.qml",
         battery: "qrc:/applets/BatteryApplet.qml",
         trash: "qrc:/applets/TrashApplet.qml",
-        windowskiller: "qrc:/applets/WindowsKillerApplet.qml"
+        windowskiller: "qrc:/applets/WindowsKillerApplet.qml",
+        volume: "qrc:/applets/VolumeApplet.qml"
     })
     source: sources[appletId] || ""
     onLoaded: {

@@ -95,7 +95,20 @@ Window {
         onClicked: (mouse) => {
             if (moved) return
             if (mouse.button === Qt.RightButton) app.openSettings("applets")
+            else if (mouse.button === Qt.LeftButton && view.item && view.item.doubleClick) singleClick.restart()
             else view.activate(mouse.button)
+        }
+        onDoubleClicked: {
+            singleClick.stop()
+            if (view.item && view.item.doubleClick) view.item.doubleClick()
+        }
+        onWheel: (wheel) => {
+            if (view.item && view.item.scroll) view.item.scroll(wheel.angleDelta.y > 0 ? 1 : -1)
+        }
+        Timer {
+            id: singleClick
+            interval: 260
+            onTriggered: view.activate(Qt.LeftButton)
         }
     }
 

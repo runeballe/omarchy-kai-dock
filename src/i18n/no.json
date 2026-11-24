@@ -270,5 +270,13 @@
   "Won't kill %1: it keeps the desktop running.": "Dreper ikke %1: den holder skrivebordet i gang.",
   "Killed %1 (pid %2).": "Drepte %1 (pid %2).",
   "Wave": "Bølge",
-  "Rotation": "Rotasjon"
+  "Rotation": "Rotasjon",
+  "Volume": "Volum",
+  "Scroll to change the volume, click to mute, double click for the mixer.": "Rull for å endre volumet, klikk for å dempe, dobbeltklikk for mikseren.",
+  "Mute": "Demp",
+  "Unmute": "Slå på lyd",
+  "Open mixer": "Åpne mikser",
+  "Volume — wpctl (PipeWire) not found": "Volum — fant ikke wpctl (PipeWire)",
+  "Volume: muted": "Volum: dempet",
+  "Volume: %1%": "Volum: %1 %"
 }

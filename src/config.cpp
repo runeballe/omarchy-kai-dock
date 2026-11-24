@@ -44,7 +44,7 @@ QString Config::defaultDataDirectory() {
 }
 
 QStringList Config::knownApplets() {
-    return {"apps", "clock", "weather", "sysmon", "battery", "trash", "windowskiller"};
+    return {"apps", "clock", "weather", "sysmon", "battery", "trash", "windowskiller", "volume"};
 }
 
 QVariantMap Config::defaults() {
