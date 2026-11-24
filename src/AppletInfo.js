@@ -1,7 +1,8 @@
-.pragma library
+// Not a .pragma library, so it can read the scriptApplets context property.
 
 // Names and descriptions of the applets, for menus and Settings.
 function name(id) {
+    if (id.startsWith("script:")) return scriptApplets.info(id).name || id.slice(7)
     switch (id) {
     case "apps": return qsTr("Applications")
     case "clock": return qsTr("Clock")
@@ -16,6 +17,7 @@ function name(id) {
 }
 
 function description(id) {
+    if (id.startsWith("script:")) return scriptApplets.info(id).description || qsTr("Script applet in %1").arg(scriptApplets.info(id).dir || "")
     switch (id) {
     case "apps": return qsTr("Opens the app launcher.")
     case "clock": return qsTr("Analog or digital time and date.")

@@ -278,5 +278,14 @@
   "Open mixer": "Åpne mikser",
   "Volume — wpctl (PipeWire) not found": "Volum — fant ikke wpctl (PipeWire)",
   "Volume: muted": "Volum: dempet",
-  "Volume: %1%": "Volum: %1 %"
+  "Volume: %1%": "Volum: %1 %",
+  "Bind this command to a key to use the applet from the keyboard.": "Bind denne kommandoen til en tast for å bruke appleten fra tastaturet.",
+  "Hyprland owns the keyboard, so applet shortcuts are Hyprland bindings that run “kai applet”. Add lines like these to ~/.config/hypr/bindings.lua:": "Hyprland eier tastaturet, så snarveier til appleter er Hyprland-bindinger som kjører «kai applet». Legg til linjer som disse i ~/.config/hypr/bindings.lua:",
+  "Script applets": "Skript-appleter",
+  "Any folder in %1 with an applet.json becomes an applet. kai runs its “exec” command every “interval” seconds and shows the output on the icon; on_click, on_middle_click, on_double_click, on_scroll_up and on_scroll_down run on those actions. Scripts can also call “kai badge”, “kai progress” and “kai animate” at any time.": "Hver mappe i %1 med en applet.json blir en applet. kai kjører «exec»-kommandoen hvert «interval» sekund og viser resultatet på ikonet; on_click, on_middle_click, on_double_click, on_scroll_up og on_scroll_down kjøres ved de handlingene. Skript kan også kalle «kai badge», «kai progress» og «kai animate» når som helst.",
+  "%1 — %2": "%1 — %2",
+  "Run now": "Kjør nå",
+  "Script applet in %1": "Skript-applet i %1",
+  "exited with code %1": "avsluttet med kode %1",
+  "could not run the script": "kunne ikke kjøre skriptet"
 }

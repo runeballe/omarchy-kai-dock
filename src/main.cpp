@@ -28,6 +28,8 @@
 #include "windowkiller.h"
 #include "audio.h"
 #include "badges.h"
+#include "dockservice.h"
+#include "scriptapplets.h"
 
 namespace {
 
@@ -40,6 +42,11 @@ Usage:
   kai quit                 Quit the running dock
   kai --software           Start with the software (CPU) renderer this time
   kai --opengl             Start with the OpenGL renderer this time
+  kai applet ID [ACTION]   Click an applet (middle, double, scroll-up, scroll-down)
+  kai badge KEY [TEXT]     Show TEXT over an applet's or app's icon (none clears)
+  kai progress KEY N|off   Show a progress bar at N percent over an icon
+  kai animate KEY NAME     Play an animation on an icon (bounce, wave, rotate…)
+  kai applets              List the applet ids
   kai theme list [--json]  List installed themes
   kai theme install FILE   Install a theme from a JSON file [--json]
   kai theme apply ID       Apply a theme [--json]
@@ -110,6 +117,12 @@ int main(int argc, char *argv[]) {
         QTextStream(stdout) << "kai 0.1.0\n";
         return 0;
     }
+    // Requests to the running dock, for key bindings and scripts.
+    static const QStringList dockCommands{"applet", "badge", "progress", "animate", "applets"};
+    if (dockCommands.contains(args.value(0))) {
+        QCoreApplication core(argc, argv);
+        return dockServiceCommand(args);
+    }
     if (args.value(0) == "theme") {
         qputenv("QT_QPA_PLATFORM", "offscreen");
         QGuiApplication app(argc, argv);
@@ -153,7 +166,10 @@ int main(int argc, char *argv[]) {
     app.installTranslator(&translator);
 
     Theme omarchy;
+    ScriptApplets scripts;
+    Config::s_scriptApplets = scripts.ids();
     Config config;
+    QObject::connect(&scripts, &ScriptApplets::appletsChanged, &config, [&] { config.setScriptApplets(scripts.ids()); });
     AppIndex apps;
     Hyprland hyprland;
     DockModel dock(&config, &apps, &hyprland);
@@ -178,6 +194,11 @@ int main(int argc, char *argv[]) {
     context->setContextProperty("audio", &audio);
     Badges badges;
     context->setContextProperty("badges", &badges);
+    context->setContextProperty("scriptApplets", &scripts);
+    DockService service(&badges);
+    if (!service.registerOnBus())
+        qWarning("kai: couldn't claim org.kai.Dock on the session bus; `kai applet` and friends won't reach this dock");
+    context->setContextProperty("dockService", &service);
     context->setContextProperty("shell", &shell);
     context->setContextProperty("fonts", new Fonts());
     context->setContextProperty("openSettingsOnStart", command == "settings");
@@ -195,6 +216,10 @@ int main(int argc, char *argv[]) {
         else
             // openSettings(page) takes one argument, so the call must pass one.
             QMetaObject::invokeMethod(root, "openSettings", Q_ARG(QVariant, QVariant()));
+    });
+
+    QObject::connect(&service, &DockService::settingsRequested, root, [root] {
+        QMetaObject::invokeMethod(root, "openSettings", Q_ARG(QVariant, QVariant()));
     });
 
     const int code = app.exec();

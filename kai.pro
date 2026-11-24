@@ -19,7 +19,9 @@ HEADERS += \
     src/weather.h \
     src/windowkiller.h \
     src/audio.h \
-    src/badges.h
+    src/badges.h \
+    src/dockservice.h \
+    src/scriptapplets.h
 
 SOURCES += \
     src/main.cpp \
@@ -35,7 +37,9 @@ SOURCES += \
     src/weather.cpp \
     src/windowkiller.cpp \
     src/audio.cpp \
-    src/badges.cpp
+    src/badges.cpp \
+    src/dockservice.cpp \
+    src/scriptapplets.cpp
 
 include(shaders.pri)
 RESOURCES += src/resources.qrc

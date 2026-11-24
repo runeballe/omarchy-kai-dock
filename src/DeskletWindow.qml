@@ -105,6 +105,17 @@ Window {
         onWheel: (wheel) => {
             if (view.item && view.item.scroll) view.item.scroll(wheel.angleDelta.y > 0 ? 1 : -1)
         }
+        Connections {
+            target: dockService
+            function onAppletAction(applet, action) {
+                if (applet !== desklet.appletId || !view.item) return
+                const a = view.item
+                if (action === "double" && a.doubleClick) a.doubleClick()
+                else if (action === "scroll-up" && a.scroll) a.scroll(1)
+                else if (action === "scroll-down" && a.scroll) a.scroll(-1)
+                else view.activate(action === "middle" ? Qt.MiddleButton : Qt.LeftButton)
+            }
+        }
         Timer {
             id: singleClick
             interval: 260

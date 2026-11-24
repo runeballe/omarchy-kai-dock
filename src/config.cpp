@@ -43,14 +43,28 @@ QString Config::defaultDataDirectory() {
     return (xdg.isEmpty() ? QDir::homePath() + "/.local/share" : xdg) + "/kai";
 }
 
-QStringList Config::knownApplets() {
+QStringList Config::s_scriptApplets;
+
+void Config::setScriptApplets(const QStringList &ids) {
+    if (ids == s_scriptApplets)
+        return;
+    s_scriptApplets = ids;
+    ensureApplets();
+    scheduleSave();
+    emit changed();
+}
+
+QStringList Config::builtinApplets() {
     return {"apps", "clock", "weather", "sysmon", "battery", "trash", "windowskiller", "volume"};
 }
+
+// Script applets are found on disk at start-up and whenever the folder changes.
+QStringList Config::knownApplets() { return builtinApplets() + s_scriptApplets; }
 
 QVariantMap Config::defaults() {
     QVariantList applets;
     const QStringList on{"apps", "clock", "sysmon", "weather"};
-    for (const auto &id : knownApplets())
+    for (const auto &id : builtinApplets())
         applets << QVariantMap{{"id", id}, {"enabled", on.contains(id)}, {"detached", false},
                                {"x", 80}, {"y", 80}};
     return {

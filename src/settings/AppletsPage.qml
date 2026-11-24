@@ -85,6 +85,18 @@ SettingsPage {
                         onToggled: if (checked) config.setApplet(card.id, "detached", true)
                     }
                     Item { Layout.fillWidth: true }
+                    // The command a Hyprland key binding runs to click it.
+                    TextField {
+                        Layout.preferredWidth: 260
+                        readOnly: true
+                        selectByMouse: true
+                        font.family: "monospace"
+                        font.pixelSize: 12
+                        text: "kai applet " + card.id
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
+                        ToolTip.text: qsTr("Bind this command to a key to use the applet from the keyboard.")
+                    }
                 }
 
                 // Per-applet settings.
@@ -156,6 +168,41 @@ SettingsPage {
                 }
             }
         }
+    }
+
+    SectionTitle { text: qsTr("Keyboard shortcuts") }
+    Label {
+        width: parent.width
+        wrapMode: Text.Wrap
+        opacity: 0.7
+        text: qsTr("Hyprland owns the keyboard, so applet shortcuts are Hyprland bindings that run “kai applet”. Add lines like these to ~/.config/hypr/bindings.lua:")
+    }
+    TextArea {
+        width: parent.width
+        readOnly: true
+        selectByMouse: true
+        font.family: "monospace"
+        font.pixelSize: 12
+        text: 'o.bind("SUPER + ALT + K", "Kill a window", "kai applet windowskiller")\n'
+            + 'o.bind("SUPER + ALT + I", "Window info", "kai applet windowskiller middle")\n'
+            + 'o.bind("SUPER + ALT + M", "Mute", "kai applet volume")'
+    }
+
+    SectionTitle { text: qsTr("Script applets") }
+    Label {
+        width: parent.width
+        wrapMode: Text.Wrap
+        opacity: 0.7
+        text: qsTr("Any folder in %1 with an applet.json becomes an applet. kai runs its “exec” command every “interval” seconds and shows the output on the icon; on_click, on_middle_click, on_double_click, on_scroll_up and on_scroll_down run on those actions. Scripts can also call “kai badge”, “kai progress” and “kai animate” at any time.").arg(scriptApplets.directory)
+    }
+    TextArea {
+        width: parent.width
+        readOnly: true
+        selectByMouse: true
+        font.family: "monospace"
+        font.pixelSize: 12
+        text: '{\n  "name": "Updates",\n  "description": "Pending package updates",\n  "icon": "system-software-update",\n'
+            + '  "exec": "checkupdates | wc -l",\n  "interval": 1800,\n  "on_click": "xdg-terminal-exec sudo pacman -Syu"\n}'
     }
 
     SectionTitle { text: qsTr("Desklets") }

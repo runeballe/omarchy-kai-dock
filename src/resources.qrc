@@ -23,6 +23,7 @@
         <file>applets/WeatherGlyph.qml</file>
         <file>applets/WindowsKillerApplet.qml</file>
         <file>applets/VolumeApplet.qml</file>
+        <file>applets/ScriptApplet.qml</file>
         <file>shaders/wave.vert.qsb</file>
         <file>shaders/wave.frag.qsb</file>
         <file>i18n/en.json</file>

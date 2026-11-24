@@ -24,6 +24,7 @@
 #include "windowkiller.h"
 #include "audio.h"
 #include "badges.h"
+#include "scriptapplets.h"
 
 static void write(const QString &path, const QByteArray &contents) {
     QDir().mkpath(QFileInfo(path).absolutePath());
@@ -661,6 +662,34 @@ private slots:
         delete clock;
         clockConfig->set("clockFont", "");
         clockConfig->set("clockFontScale", 1.0);
+    }
+
+    void scriptAppletsReadFoldersAndOutput() {
+        QTemporaryDir dir;
+        write(dir.filePath("uptime/applet.json"), "{\"name\":\"Uptime\",\"exec\":\"echo hi\",\"interval\":5,\"on_click\":\"true\"}");
+        write(dir.filePath("broken/applet.json"), "{not json");
+        write(dir.filePath("empty/readme"), "x");
+        ScriptApplets scripts(dir.path());
+        QCOMPARE(scripts.ids(), QStringList{"script:uptime"});
+        QVERIFY(scripts.hasAction("script:uptime", "click"));
+        QVERIFY(!scripts.hasAction("script:uptime", "double"));
+        QTRY_COMPARE(scripts.states().value("script:uptime").toMap().value("text").toString(), QString("hi"));
+
+        const QVariantMap json = ScriptApplets::parseOutput("{\"text\":\"3\",\"tooltip\":\"three\",\"progress\":40}");
+        QCOMPARE(json.value("text").toString(), QString("3"));
+        QCOMPARE(json.value("progress").toDouble(), 0.4);
+        const QVariantMap plain = ScriptApplets::parseOutput("up 2 hours\nmore\n");
+        QCOMPARE(plain.value("text").toString(), QString("up 2 hours"));
+        QCOMPARE(plain.value("progress").toDouble(), -1.0);
+    }
+
+    void configKeepsScriptApplets() {
+        QTemporaryDir dir;
+        Config config(dir.filePath("cfg"), dir.filePath("data"));
+        config.setScriptApplets({"script:uptime"});
+        QVERIFY(!config.applet("script:uptime").isEmpty());
+        config.setScriptApplets({});
+        QVERIFY(config.applet("script:uptime").isEmpty());
     }
 
     void badgesFollowUnityAndScripts() {

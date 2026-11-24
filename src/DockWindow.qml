@@ -410,6 +410,34 @@ Window {
         }
     }
 
+    // Requests from `kai applet`, `kai animate` and other D-Bus callers.
+    function rowFor(key) {
+        for (let i = 0; i < dockModel.count; ++i) {
+            const r = dockModel.get(i)
+            if ((r.kind === "applet" && r.appletId === key) || (r.kind === "app" && r.appId === key))
+                return i
+        }
+        return -1
+    }
+    Connections {
+        target: dockService
+        function onAppletAction(applet, action) {
+            const i = win.rowFor(applet)
+            const d = i >= 0 ? items.itemAt(i) : null
+            if (!d || !d.applet) return
+            if (action === "double" && d.applet.doubleClick) { d.playClick(); d.applet.doubleClick() }
+            else if (action === "scroll-up" && d.applet.scroll) d.applet.scroll(1)
+            else if (action === "scroll-down" && d.applet.scroll) d.applet.scroll(-1)
+            else if (action === "middle") d.activateApplet(Qt.MiddleButton, i)
+            else if (action === "click") d.activateApplet(Qt.LeftButton, i)
+        }
+        function onAnimateRequested(key, animation) {
+            const i = win.rowFor(key)
+            const d = i >= 0 ? items.itemAt(i) : null
+            if (d) d.play(animation, 1)
+        }
+    }
+
     Timer {
         id: appletClick
         property int row: -1

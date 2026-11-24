@@ -60,6 +60,11 @@ public:
     static QVariantMap defaults();
     static QVariantMap themeDefaults();
     static QStringList knownApplets();
+    static QStringList builtinApplets();
+    // Called with the ids of the script applets found on disk.
+    void setScriptApplets(const QStringList &ids);
+    // Set before a Config exists so the first load keeps script applets.
+    static QStringList s_scriptApplets;
     // The renderer is needed before the Qt application exists, so this reads
     // the file directly.
     static QString readRenderer(const QString &configDirectory = {});
