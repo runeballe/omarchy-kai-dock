@@ -89,6 +89,8 @@ QVariantMap Config::defaults() {
         {"hoverAnimation", "bounce"},
         {"separators", QVariantList{}},
         {"launchAnimation", "bounce"},
+        {"appearEffect", "fade"},
+        {"removeEffect", "evaporate"},
         {"attentionAnimation", "wobble"},
         {"animationSpeed", 1.0},
         {"deskletLayer", "bottom"},

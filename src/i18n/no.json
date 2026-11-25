@@ -287,5 +287,12 @@
   "Run now": "Kjør nå",
   "Script applet in %1": "Skript-applet i %1",
   "exited with code %1": "avsluttet med kode %1",
-  "could not run the script": "kunne ikke kjøre skriptet"
+  "could not run the script": "kunne ikke kjøre skriptet",
+  "When an icon appears": "Når et ikon dukker opp",
+  "When an icon is removed": "Når et ikon fjernes",
+  "Evaporate": "Fordamp",
+  "Fade out": "Ton ut",
+  "Explode": "Eksploder",
+  "Break": "Knus",
+  "Black hole": "Svart hull"
 }

@@ -83,6 +83,21 @@ Window {
         target: dockModel
         function onRowsInserted() { win.refreshKinds() }
         function onRowsRemoved() { win.refreshKinds() }
+        // An icon about to leave is replayed where it stood, breaking up.
+        function onRowsAboutToBeRemoved(parent, first, last) {
+            const effect = win.v.removeEffect
+            if (!win.settled || !effect || effect === "none") return
+            for (let i = first; i <= last; ++i) {
+                const d = items.itemAt(i)
+                if (!d || d.kind !== "app" || d.iconSource === "") continue
+                const r = d.iconRect()
+                removalFx.createObject(content, {
+                    x: r.x, y: r.y, width: r.width, height: r.height,
+                    rotation: -win.frameRotation, source: d.iconSource, effect: effect,
+                    duration: 750 / win.speed
+                })
+            }
+        }
         function onRowsMoved() { win.refreshKinds() }
         function onModelReset() { win.refreshKinds() }
         function onDataChanged() { win.refreshKinds() }
@@ -435,6 +450,17 @@ Window {
             const i = win.rowFor(key)
             const d = i >= 0 ? items.itemAt(i) : null
             if (d) d.play(animation, 1)
+        }
+    }
+
+    // The icons present at start-up just appear; effects are for changes.
+    property bool settled: false
+    Timer { interval: 1500; running: true; onTriggered: win.settled = true }
+    Component {
+        id: removalFx
+        IconEffect {
+            onFinished: destroy()
+            Component.onCompleted: start()
         }
     }
 

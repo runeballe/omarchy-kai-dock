@@ -6,6 +6,7 @@
         <file>DeskletWindow.qml</file>
         <file>DockIndicator.qml</file>
         <file>DockItem.qml</file>
+        <file>IconEffect.qml</file>
         <file>DockLabel.qml</file>
         <file>DockMenu.qml</file>
         <file>CalendarPopup.qml</file>

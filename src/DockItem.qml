@@ -83,6 +83,8 @@ Item {
             Item {
                 id: visual
                 anchors.fill: parent
+                // Hidden while the appear effect assembles the icon.
+                visible: !appearFx.active
                 transform: [
                     Rotation { origin.x: visual.width / 2; origin.y: visual.height / 2; axis { x: 0; y: 1; z: 0 } angle: cell.flip },
                     Rotation { origin.x: visual.width / 2; origin.y: visual.height; angle: cell.wobble },
@@ -144,6 +146,20 @@ Item {
                         app: cell.app
                         dock: cell.dock
                     }
+                }
+            }
+
+            Loader {
+                id: appearFx
+                anchors.fill: parent
+                active: false
+                sourceComponent: IconEffect {
+                    source: cell.iconSource
+                    effect: dock.v.appearEffect
+                    appearing: true
+                    duration: 650 * cell.d
+                    onFinished: appearFx.active = false
+                    Component.onCompleted: start()
                 }
             }
 
@@ -393,7 +409,20 @@ Item {
         if (loopState === "launch") play(dock.v.launchAnimation, Animation.Infinite)
         else if (loopState === "attention") play(dock.v.attentionAnimation, Animation.Infinite)
     }
-    Component.onCompleted: if (loopState !== "") loopStateChanged()
+    Component.onCompleted: {
+        if (loopState !== "") loopStateChanged()
+        // Icons that join after start-up arrive with a transition effect.
+        if (dock.settled && kind === "app" && dock.v.appearEffect && dock.v.appearEffect !== "none")
+            appearFx.active = true
+    }
+
+    // The icon's place on screen in frame coordinates, for the effect that
+    // plays where it stood once it has been removed.
+    function iconRect() {
+        const w = s * sc * pulse
+        return Qt.rect(x + width / 2 - w / 2, iconY - bounce + s - w, w, w)
+    }
+    readonly property string iconSource: kind === "app" ? "image://icon/" + encodeURIComponent(icon) : ""
 
     Connections {
         target: dockModel
