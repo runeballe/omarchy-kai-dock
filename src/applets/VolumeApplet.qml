@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 
 // The speaker volume: scroll to change it, click to mute, double click to
 // open the mixer.
@@ -31,16 +32,25 @@ Item {
         ]
     }
 
-    AppletTile { visible: !applet.desklet; app: applet.app; tint: "#1c2433" }
-
     // A speaker with sound waves; the waves follow the level.
     Item {
         id: speaker
-        width: applet.desklet ? 72 : applet.width * 0.7
+        width: applet.desklet ? 72 : applet.width * 0.9
         height: width
         anchors.horizontalCenter: parent.horizontalCenter
         y: applet.desklet ? 14 : (applet.height - height) / 2
-        readonly property color ink: audio.muted ? "#8a8a95" : "white"
+        // No tile behind it, so it takes the theme's text color (dark on light
+        // themes) and a soft shadow to stand out on any shelf.
+        readonly property color ink: audio.muted ? "#8a8a95"
+            : applet.app ? applet.app.color(config.theme.textColor, "#f2f2f2") : "#f2f2f2"
+        layer.enabled: applet.app && applet.app.fancy
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowOpacity: 0.45
+            shadowBlur: 0.5
+            shadowVerticalOffset: 1
+            autoPaddingEnabled: true
+        }
 
         Canvas {
             anchors.fill: parent
