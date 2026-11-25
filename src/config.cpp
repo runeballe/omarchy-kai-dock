@@ -43,14 +43,28 @@ QString Config::defaultDataDirectory() {
     return (xdg.isEmpty() ? QDir::homePath() + "/.local/share" : xdg) + "/kai";
 }
 
-QStringList Config::knownApplets() {
-    return {"apps", "clock", "weather", "sysmon", "battery", "trash"};
+QStringList Config::s_scriptApplets;
+
+void Config::setScriptApplets(const QStringList &ids) {
+    if (ids == s_scriptApplets)
+        return;
+    s_scriptApplets = ids;
+    ensureApplets();
+    scheduleSave();
+    emit changed();
 }
+
+QStringList Config::builtinApplets() {
+    return {"apps", "clock", "weather", "sysmon", "battery", "trash", "windowskiller", "volume"};
+}
+
+// Script applets are found on disk at start-up and whenever the folder changes.
+QStringList Config::knownApplets() { return builtinApplets() + s_scriptApplets; }
 
 QVariantMap Config::defaults() {
     QVariantList applets;
     const QStringList on{"apps", "clock", "sysmon", "weather"};
-    for (const auto &id : knownApplets())
+    for (const auto &id : builtinApplets())
         applets << QVariantMap{{"id", id}, {"enabled", on.contains(id)}, {"detached", false},
                                {"x", 80}, {"y", 80}};
     return {
@@ -75,6 +89,8 @@ QVariantMap Config::defaults() {
         {"hoverAnimation", "bounce"},
         {"separators", QVariantList{}},
         {"launchAnimation", "bounce"},
+        {"appearEffect", "fade"},
+        {"removeEffect", "evaporate"},
         {"attentionAnimation", "wobble"},
         {"animationSpeed", 1.0},
         {"deskletLayer", "bottom"},
@@ -276,6 +292,15 @@ QVariantMap Config::themeData(const QString &id) const {
     return {};
 }
 
+bool Config::isBuiltinTheme(const QString &id) const {
+    for (const auto &entry : m_themes) {
+        const QVariantMap map = entry.toMap();
+        if (map.value("id").toString() == id)
+            return map.value("builtin").toBool();
+    }
+    return false;
+}
+
 void Config::rebuildTheme() {
     QVariantMap theme = themeDefaults();
     QVariantMap base = themeData(m_values.value("theme").toString());
@@ -297,7 +322,6 @@ void Config::applyTheme(const QString &id) {
         return;
     m_values.insert("theme", id);
     m_values.insert("themeOverrides", QVariantMap{});
-    // A theme's preferred view only wins when the user hasn't fixed one.
     scheduleSave();
     emit changed();
     rebuildTheme();
@@ -316,7 +340,10 @@ QString Config::saveThemeAs(const QString &name) {
     data.insert("name", name.trimmed().isEmpty() ? QStringLiteral("My theme") : name.trimmed());
     QString id = slugify(data.value("name").toString());
     QString unique = id;
-    for (int n = 2; !themeData(unique).isEmpty() && themeData(unique).value("name") != data.value("name"); ++n)
+    // A built-in theme's id is never reused (its file would be shadowed);
+    // an installed theme of the same name is overwritten.
+    for (int n = 2; isBuiltinTheme(unique)
+                    || (!themeData(unique).isEmpty() && themeData(unique).value("name") != data.value("name")); ++n)
         unique = QString("%1-%2").arg(id).arg(n);
     if (!writeJsonAtomically(themesPath() + "/" + unique + ".json", data))
         return {};
@@ -355,7 +382,9 @@ QString Config::installThemeData(const QByteArray &bytes, QString *error) {
         *error = tr("The theme needs a name and at least a few style settings.");
         return {};
     }
-    const QString id = slugify(name);
+    QString id = slugify(name);
+    for (int n = 2; isBuiltinTheme(id); ++n)
+        id = QString("%1-%2").arg(slugify(name)).arg(n);
     if (!writeJsonAtomically(themesPath() + "/" + id + ".json", data)) {
         *error = tr("Could not write to %1.").arg(themesPath());
         return {};

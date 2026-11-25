@@ -7,6 +7,9 @@ Item {
     property var app
     readonly property bool desklet: mode === "desklet"
     readonly property size deskletSize: Qt.size(320, 210)
+    // Text follows the theme, so light themes stay readable.
+    readonly property color fg: app ? app.color(config.theme.textColor, "#f2f2f2") : "#f2f2f2"
+    readonly property color soft: Qt.rgba(fg.r, fg.g, fg.b, 0.72)
     readonly property bool ready: weather.status === "ok"
     readonly property string temp: ready ? Math.round(weather.temperature) + "°" : "–"
 
@@ -42,9 +45,9 @@ Item {
             anchors.bottom: parent.bottom
             anchors.margins: parent.width * 0.1
             text: applet.temp
-            color: "white"
+            color: applet.fg
             style: Text.Outline
-            styleColor: Qt.rgba(0, 0, 0, 0.35)
+            styleColor: applet.fg.hslLightness > 0.5 ? Qt.rgba(0, 0, 0, 0.35) : Qt.rgba(1, 1, 1, 0.6)
             font.pixelSize: parent.width * 0.27
             font.weight: Font.Bold
         }
@@ -63,7 +66,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap
             text: applet.title
-            color: "white"
+            color: applet.fg
             font.pixelSize: 15
         }
 
@@ -80,13 +83,13 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 Text {
                     text: Math.round(weather.temperature) + weather.unit
-                    color: "white"
+                    color: applet.fg
                     font.pixelSize: 40
                     font.weight: Font.DemiBold
                 }
                 Text {
                     text: weather.description + " · " + weather.place
-                    color: Qt.rgba(1, 1, 1, 0.75)
+                    color: applet.soft
                     font.pixelSize: 13
                 }
             }
@@ -105,7 +108,7 @@ Item {
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: { translator.language; return modelData.date.toLocaleDateString(Qt.locale(), "ddd") }
-                        color: Qt.rgba(1, 1, 1, 0.7)
+                        color: applet.soft
                         font.pixelSize: 12
                     }
                     WeatherGlyph {
@@ -117,7 +120,7 @@ Item {
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: Math.round(modelData.high) + "° / " + Math.round(modelData.low) + "°"
-                        color: "white"
+                        color: applet.fg
                         font.pixelSize: 12
                     }
                 }

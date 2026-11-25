@@ -21,6 +21,10 @@
 #include "theme.h"
 #include "translator.h"
 #include "weather.h"
+#include "windowkiller.h"
+#include "audio.h"
+#include "badges.h"
+#include "scriptapplets.h"
 
 static void write(const QString &path, const QByteArray &contents) {
     QDir().mkpath(QFileInfo(path).absolutePath());
@@ -197,6 +201,14 @@ private slots:
         QVERIFY(config.deleteTheme("mine"));
         QCOMPARE(config.get("theme").toString(), QString("omarchy"));
         QVERIFY(!config.deleteTheme("glass"));  // built-ins stay
+        // A name that matches a built-in theme gets its own id rather than a
+        // file the built-in would shadow, so the tweaks survive.
+        config.applyTheme("omarchy");
+        config.setThemeOverride("background", "#ff0000");
+        const QString shadow = config.saveThemeAs("Glass");
+        QCOMPARE(shadow, QString("glass-2"));
+        QCOMPARE(config.theme().value("background").toString(), QString("#ff0000"));
+        QCOMPARE(config.installThemeData("{\"name\":\"Neon\",\"background\":\"#00ff00\",\"radius\":3}", &error), QString("neon-2"));
     }
 
     void appsMatchWindowClasses() {
@@ -268,7 +280,8 @@ private slots:
         QCOMPARE(items[4].key, QString("sep:user:firefox"));
         QCOMPARE(items[5].appId, QString("ghostty"));
         QCOMPARE(items[6].key, QString("sep:user:ghostty"));
-        QCOMPARE(items[7].key, QString("sep:applets"));
+        // The applets' own separator would sit right beside it; one line is enough.
+        QCOMPARE(items[7].kind, QString("applet"));
     }
 
     void dockModelKeepsAppsDetachedOutOfFrontSlot() {        QTemporaryDir dir;
@@ -649,6 +662,89 @@ private slots:
         delete clock;
         clockConfig->set("clockFont", "");
         clockConfig->set("clockFontScale", 1.0);
+    }
+
+    void scriptAppletsReadFoldersAndOutput() {
+        QTemporaryDir dir;
+        write(dir.filePath("uptime/applet.json"), "{\"name\":\"Uptime\",\"exec\":\"echo hi\",\"interval\":5,\"on_click\":\"true\"}");
+        write(dir.filePath("broken/applet.json"), "{not json");
+        write(dir.filePath("empty/readme"), "x");
+        ScriptApplets scripts(dir.path());
+        QCOMPARE(scripts.ids(), QStringList{"script:uptime"});
+        QVERIFY(scripts.hasAction("script:uptime", "click"));
+        QVERIFY(!scripts.hasAction("script:uptime", "double"));
+        QTRY_COMPARE(scripts.states().value("script:uptime").toMap().value("text").toString(), QString("hi"));
+
+        const QVariantMap json = ScriptApplets::parseOutput("{\"text\":\"3\",\"tooltip\":\"three\",\"progress\":40}");
+        QCOMPARE(json.value("text").toString(), QString("3"));
+        QCOMPARE(json.value("progress").toDouble(), 0.4);
+        const QVariantMap plain = ScriptApplets::parseOutput("up 2 hours\nmore\n");
+        QCOMPARE(plain.value("text").toString(), QString("up 2 hours"));
+        QCOMPARE(plain.value("progress").toDouble(), -1.0);
+    }
+
+    void configKeepsScriptApplets() {
+        QTemporaryDir dir;
+        Config config(dir.filePath("cfg"), dir.filePath("data"));
+        config.setScriptApplets({"script:uptime"});
+        QVERIFY(!config.applet("script:uptime").isEmpty());
+        config.setScriptApplets({});
+        QVERIFY(config.applet("script:uptime").isEmpty());
+    }
+
+    void badgesFollowUnityAndScripts() {
+        QCOMPARE(Badges::keyForUri("application://org.telegram.desktop.desktop"), QString("org.telegram.desktop"));
+        Badges::State st;
+        Badges::applyUnity(st, {{"count", 7}, {"count-visible", true}});
+        QCOMPARE(Badges::present(st).value("info").toString(), QString("7"));
+        QCOMPARE(Badges::present(st).value("progress").toDouble(), -1.0);
+        Badges::applyUnity(st, {{"progress", 0.4}, {"progress-visible", true}, {"count-visible", false}});
+        QCOMPARE(Badges::present(st).value("info").toString(), QString());
+        QCOMPARE(Badges::present(st).value("progress").toDouble(), 0.4);
+        Badges b;
+        QSignalSpy spy(&b, &Badges::changed);
+        b.setInfo("applet:clock", "NEW");
+        QCOMPARE(b.entries().value("applet:clock").toMap().value("info").toString(), QString("NEW"));
+        b.clear("applet:clock");
+        QVERIFY(!b.entries().contains("applet:clock"));
+        QCOMPARE(spy.count(), 2);
+    }
+
+    void audioParsesWpctl() {
+        double v = 0; bool m = true;
+        QVERIFY(Audio::parse("Volume: 0.45", &v, &m));
+        QCOMPARE(v, 0.45); QVERIFY(!m);
+        QVERIFY(Audio::parse("Volume: 1.00 [MUTED]\n", &v, &m));
+        QCOMPARE(v, 1.0); QVERIFY(m);
+        QVERIFY(!Audio::parse("garbage", &v, &m));
+    }
+
+    void windowKillerPicksTheWindowUnderThePoint() {
+        const QByteArray monitors = "[{\"activeWorkspace\":{\"id\":1},\"specialWorkspace\":{\"id\":0}}]";
+        const QByteArray clients = "["
+            "{\"address\":\"0xa\",\"class\":\"tiled\",\"initialClass\":\"tiled\",\"pid\":10,\"workspace\":{\"id\":1},\"at\":[0,0],\"size\":[800,600],\"floating\":false,\"focusHistoryID\":0},"
+            "{\"address\":\"0xb\",\"class\":\"float\",\"initialClass\":\"float\",\"pid\":20,\"workspace\":{\"id\":1},\"at\":[100,100],\"size\":[200,200],\"floating\":true,\"focusHistoryID\":3},"
+            "{\"address\":\"0xc\",\"class\":\"elsewhere\",\"pid\":30,\"workspace\":{\"id\":2},\"at\":[0,0],\"size\":[800,600],\"floating\":true,\"focusHistoryID\":1}]";
+        const QByteArray layers = "{\"M\":{\"levels\":{\"2\":[{\"namespace\":\"kai-dock\",\"x\":0,\"y\":500,\"w\":800,\"h\":100}]}}}";
+        QCOMPARE(WindowKiller::clientAt(clients, monitors, layers, 150, 150).value("class").toString(), QString("float"));
+        QCOMPARE(WindowKiller::clientAt(clients, monitors, layers, 50, 50).value("pid").toLongLong(), 10LL);
+        QVERIFY(WindowKiller::clientAt(clients, monitors, layers, 50, 550).isEmpty());  // the dock cancels
+        QVERIFY(WindowKiller::clientAt(clients, monitors, layers, 900, 50).isEmpty());  // nothing there
+    }
+
+    void windowKillerReadsProcessInfo() {
+        QTemporaryDir dir;
+        write(dir.filePath("42/cmdline"), QByteArray("firefox\0--new-window\0", 21));
+        write(dir.filePath("42/stat"), "42 (Web Content) S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 1000 0 0\n");
+        write(dir.filePath("uptime"), "1000.00 50.00\n");
+        const QVariantMap info = WindowKiller::processInfo(42, dir.path());
+        QCOMPARE(info.value("command").toString(), QString("firefox --new-window"));
+        QVERIFY(info.contains("uptime"));
+        QCOMPARE(WindowKiller::formatUptime(3725), QString("1h 2m"));
+        QCOMPARE(WindowKiller::formatUptime(90061), QString("1d 1h 1m"));
+        QVERIFY(WindowKiller::isProtected(1, "systemd"));
+        QVERIFY(WindowKiller::isProtected(5000, "Hyprland"));
+        QVERIFY(!WindowKiller::isProtected(5000, "firefox"));
     }
 
 private:

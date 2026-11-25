@@ -83,12 +83,29 @@ Window {
         target: dockModel
         function onRowsInserted() { win.refreshKinds() }
         function onRowsRemoved() { win.refreshKinds() }
+        // An icon about to leave is replayed where it stood, breaking up.
+        function onRowsAboutToBeRemoved(parent, first, last) {
+            const effect = win.v.removeEffect
+            if (!win.settled || !effect || effect === "none") return
+            for (let i = first; i <= last; ++i) {
+                const d = items.itemAt(i)
+                if (!d || d.kind !== "app" || d.iconSource === "") continue
+                const r = d.iconRect()
+                removalFx.createObject(content, {
+                    x: r.x, y: r.y, width: r.width, height: r.height,
+                    rotation: -win.frameRotation, source: d.iconSource, effect: effect,
+                    duration: 750 / win.speed
+                })
+            }
+        }
         function onRowsMoved() { win.refreshKinds() }
         function onModelReset() { win.refreshKinds() }
         function onDataChanged() { win.refreshKinds() }
         function onCountChanged() { win.refreshKinds() }
     }
 
+    // Bumped by a cell whose width changes, so the layout below is redone.
+    property int layoutRev: 0
     readonly property real sepWidth: t.separator === "gap" ? Math.round(s * 0.35) : Math.max(10, Math.round(s * 0.3))
     property real hoverU: -1          // pointer position along the dock, in logical coordinates
     property real zoomAmount: 0       // 0..1, eases in and out with the hover
@@ -98,12 +115,14 @@ Window {
     // to the pointer, and the row is shifted so that the point under the
     // pointer stays under it.
     readonly property var geom: {
+        layoutRev
         const n = kinds.length
         const fw = along
         const base = []
         let total = 0
         for (let i = 0; i < n; ++i) {
-            const w = (kinds[i] === "separator" ? sepWidth : s) + spacing
+            const cellItem = items.itemAt(i)
+            const w = (kinds[i] === "separator" ? sepWidth : s * (cellItem ? cellItem.widthFactor : 1)) + spacing
             base.push(w)
             total += w
         }
@@ -333,7 +352,16 @@ Window {
                 const row = dockModel.get(i)
                 const delegate = items.itemAt(i)
                 if (row.kind === "applet") {
-                    if (delegate) delegate.activateApplet(mouse.button, i)
+                    if (!delegate) return
+                    // An applet with a double-click action waits a moment so
+                    // a double click doesn't also count as a single one.
+                    const applet = delegate.applet
+                    if (mouse.button === Qt.LeftButton && applet && applet.doubleClick) {
+                        appletClick.row = i
+                        appletClick.restart()
+                    } else {
+                        delegate.activateApplet(mouse.button, i)
+                    }
                     return
                 }
                 if (row.kind !== "app") return
@@ -344,10 +372,25 @@ Window {
                     dockModel.activate(i)
                 }
             }
+            onDoubleClicked: (mouse) => {
+                const i = indexAt(mouse.x)
+                if (i < 0 || i !== appletClick.row) return
+                appletClick.stop()
+                const delegate = items.itemAt(i)
+                if (delegate && delegate.applet && delegate.applet.doubleClick) {
+                    delegate.playClick()
+                    delegate.applet.doubleClick()
+                }
+            }
             onWheel: (wheel) => {
                 const i = indexAt(wheel.x)
                 if (i < 0) return
                 const row = dockModel.get(i)
+                if (row.kind === "applet") {
+                    const d = items.itemAt(i)
+                    if (d && d.applet && d.applet.scroll) d.applet.scroll(wheel.angleDelta.y > 0 ? 1 : -1)
+                    return
+                }
                 if (row.kind === "app" && row.windowCount > 0)
                     dockModel.cycle(i, wheel.angleDelta.y < 0 ? 1 : -1)
             }
@@ -379,6 +422,55 @@ Window {
             readonly property point p: frame.mapToItem(overlay, at.x, at.y)
             x: p.x - width / 2
             y: p.y - height / 2
+        }
+    }
+
+    // Requests from `kai applet`, `kai animate` and other D-Bus callers.
+    function rowFor(key) {
+        for (let i = 0; i < dockModel.count; ++i) {
+            const r = dockModel.get(i)
+            if ((r.kind === "applet" && r.appletId === key) || (r.kind === "app" && r.appId === key))
+                return i
+        }
+        return -1
+    }
+    Connections {
+        target: dockService
+        function onAppletAction(applet, action) {
+            const i = win.rowFor(applet)
+            const d = i >= 0 ? items.itemAt(i) : null
+            if (!d || !d.applet) return
+            if (action === "double" && d.applet.doubleClick) { d.playClick(); d.applet.doubleClick() }
+            else if (action === "scroll-up" && d.applet.scroll) d.applet.scroll(1)
+            else if (action === "scroll-down" && d.applet.scroll) d.applet.scroll(-1)
+            else if (action === "middle") d.activateApplet(Qt.MiddleButton, i)
+            else if (action === "click") d.activateApplet(Qt.LeftButton, i)
+        }
+        function onAnimateRequested(key, animation) {
+            const i = win.rowFor(key)
+            const d = i >= 0 ? items.itemAt(i) : null
+            if (d) d.play(animation, 1)
+        }
+    }
+
+    // The icons present at start-up just appear; effects are for changes.
+    property bool settled: false
+    Timer { interval: 1500; running: true; onTriggered: win.settled = true }
+    Component {
+        id: removalFx
+        IconEffect {
+            onFinished: destroy()
+            Component.onCompleted: start()
+        }
+    }
+
+    Timer {
+        id: appletClick
+        property int row: -1
+        interval: 260
+        onTriggered: {
+            const d = items.itemAt(row)
+            if (d) d.activateApplet(Qt.LeftButton, row)
         }
     }
 

@@ -18,6 +18,16 @@ Menu {
     dim: false
     Material.roundedScale: app.radius
     width: Math.min(360, Math.max(220, implicitContentWidth + 24))
+    // Material's own background is a shader effect, which the software
+    // renderer leaves out entirely; a plain rectangle draws everywhere.
+    background: Rectangle {
+        implicitWidth: 200
+        implicitHeight: 48
+        radius: Math.min(menu.app.radius, 12)
+        color: menu.Material.dialogColor
+        border.width: 1
+        border.color: Qt.rgba(1, 1, 1, 0.1)
+    }
 
     onClosed: {
         if (pendingTrash) {
@@ -79,6 +89,9 @@ Menu {
     }
 
     function place() {
+        // The list only measures its new entries on the next layout pass;
+        // without this the height is still the previous menu's.
+        if (contentItem && contentItem.forceLayout) contentItem.forceLayout()
         const p = dock.anchorFor(row, 6)
         const w = width, h = implicitHeight
         let x = p.x - w / 2, y = p.y - h
@@ -106,7 +119,7 @@ Menu {
             contentItem: d.separator ? sepLine : labelText
             Rectangle {
                 id: sepLine
-                visible: entry.d.separator
+                visible: entry.d.separator === true
                 height: 1
                 color: Qt.rgba(1, 1, 1, 0.12)
                 anchors.verticalCenter: parent ? parent.verticalCenter : undefined

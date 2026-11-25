@@ -22,12 +22,21 @@ Item {
     required property bool launching
 
     readonly property var g: dock.geom
-    readonly property bool valid: index < g.u.length
-    readonly property real sc: valid ? g.scale[index] : 1
+    // A row can exist for a moment before the layout has a slot for it (or
+    // after it's gone), so check every array the cell reads from.
+    readonly property bool valid: index >= 0 && index < g.u.length && index < g.w.length
+                                  && index < g.scale.length
+    readonly property real sc: valid ? (g.scale[index] ?? 1) : 1
     readonly property real s: dock.s
     readonly property var t: dock.t
+    // A docked applet may ask for a cell wider than an icon (the digital
+    // clock). Along a side edge the cells stack, so they stay icon-sized.
+    readonly property real appletFactor: kind === "applet" && appletView.item && appletView.item.dockWidthFactor
+        ? appletView.item.dockWidthFactor : 1
+    readonly property real widthFactor: dock.vertical ? 1 : appletFactor
+    onWidthFactorChanged: if (dock.layoutRev !== undefined) dock.layoutRev++
 
-    x: valid ? dock.frameX(g.u[index], g.w[index]) : 0
+    x: valid ? (dock.frameX(g.u[index], g.w[index]) ?? 0) : 0
     width: valid ? g.w[index] : 0
     height: parent ? parent.height : 0
 
@@ -37,6 +46,8 @@ Item {
     property real flip: 0
     property real wobble: 0
     property real blink: 1
+    property real spin: 0
+    property real wave: 0
     opacity: dock.dragging && dock.dragIndex === index ? 0.35 : 1
 
     readonly property real iconY: height - dock.iconBase - s
@@ -72,10 +83,31 @@ Item {
             Item {
                 id: visual
                 anchors.fill: parent
+                // Hidden while the appear effect assembles the icon.
+                visible: !appearFx.active
                 transform: [
                     Rotation { origin.x: visual.width / 2; origin.y: visual.height / 2; axis { x: 0; y: 1; z: 0 } angle: cell.flip },
-                    Rotation { origin.x: visual.width / 2; origin.y: visual.height; angle: cell.wobble }
+                    Rotation { origin.x: visual.width / 2; origin.y: visual.height; angle: cell.wobble },
+                    Rotation { origin.x: visual.width / 2; origin.y: visual.height / 2; angle: cell.spin },
+                    // Without the GPU the wave is a soft squash and stretch.
+                    Scale {
+                        readonly property real k: app.fancy ? 0 : 0.14 * Math.sin(Math.PI * cell.wave) * Math.sin(6 * Math.PI * cell.wave)
+                        origin.x: visual.width / 2; origin.y: visual.height
+                        xScale: 1 + k; yScale: 1 - k
+                    }
                 ]
+                // With the GPU the icon itself ripples (shaders/wave.vert).
+                layer.enabled: app.fancy && cell.wave > 0
+                layer.smooth: true
+                layer.effect: ShaderEffect {
+                    property real phase: cell.wave
+                    property real amplitude: 0.07
+                    property real w: width
+                    property real h: height
+                    mesh: GridMesh { resolution: Qt.size(16, 16) }
+                    vertexShader: "qrc:/shaders/wave.vert.qsb"
+                    fragmentShader: "qrc:/shaders/wave.frag.qsb"
+                }
 
                 Image {
                     id: image
@@ -101,8 +133,9 @@ Item {
                 // stay sharp when the dock magnifies them.
                 Item {
                     visible: cell.kind === "applet"
-                    width: cell.s * dock.zoomFactor
-                    height: width
+                    x: (cell.s - cell.s * cell.appletFactor) / 2
+                    width: cell.s * dock.zoomFactor * cell.appletFactor
+                    height: cell.s * dock.zoomFactor
                     scale: 1 / dock.zoomFactor
                     transformOrigin: Item.TopLeft
                     AppletView {
@@ -113,6 +146,63 @@ Item {
                         app: cell.app
                         dock: cell.dock
                     }
+                }
+            }
+
+            Loader {
+                id: appearFx
+                anchors.fill: parent
+                active: false
+                sourceComponent: IconEffect {
+                    source: cell.iconSource
+                    effect: dock.v.appearEffect
+                    appearing: true
+                    duration: 650 * cell.d
+                    onFinished: appearFx.active = false
+                    Component.onCompleted: start()
+                }
+            }
+
+            // Quick-info in the top corner, progress along the foot; drawn
+            // outside the animated visual so they stay readable while it moves.
+            Rectangle {
+                id: infoPill
+                visible: cell.badge.info !== ""
+                readonly property real h: Math.max(10, cell.s * 0.3)
+                height: h
+                width: Math.max(h, infoText.implicitWidth + h * 0.55)
+                radius: h / 2
+                x: Math.min(upright.width - width * 0.6, upright.width - width + h * 0.25)
+                y: -h * 0.2
+                color: app.accent
+                border.width: 1
+                border.color: Qt.rgba(0, 0, 0, 0.35)
+                Text {
+                    id: infoText
+                    anchors.centerIn: parent
+                    text: cell.badge.info
+                    color: omarchy.accentForeground
+                    font.pixelSize: Math.max(8, Math.round(infoPill.h * 0.68))
+                    font.weight: Font.Bold
+                }
+            }
+            Rectangle {
+                visible: cell.badge.progress >= 0
+                x: upright.width * 0.1
+                width: upright.width * 0.8
+                height: Math.max(3, cell.s * 0.09)
+                y: upright.height - height - upright.height * 0.04
+                radius: height / 2
+                color: Qt.rgba(0, 0, 0, 0.55)
+                border.width: 1
+                border.color: Qt.rgba(1, 1, 1, 0.25)
+                Rectangle {
+                    x: 1; y: 1
+                    height: parent.height - 2
+                    width: Math.max(height, (parent.width - 2) * cell.badge.progress)
+                    radius: height / 2
+                    color: app.accent
+                    Behavior on width { NumberAnimation { duration: 200 } }
                 }
             }
         }
@@ -210,7 +300,7 @@ Item {
 
     // Attention: an urgent window keeps the icon moving until it's seen.
     Rectangle {
-        visible: cell.urgent
+        visible: cell.urgent && cell.badge.info === ""
         width: cell.s * 0.22
         height: width
         radius: width / 2
@@ -223,6 +313,17 @@ Item {
 
     // --- Animations --------------------------------------------------------------
     readonly property real d: 1 / dock.speed
+
+    // Quick-info and progress: from the app (Unity LauncherEntry), kai's API,
+    // or the applet itself.
+    readonly property var badge: {
+        const e = badges.entries[kind === "applet" ? "applet:" + appletId : appId] || {}
+        const a = kind === "applet" ? appletView.item : null
+        const info = e.info || (a && a.quickInfo ? a.quickInfo : "")
+        const progress = e.progress !== undefined && e.progress >= 0 ? e.progress
+                       : a && a.progress !== undefined && a.progress >= 0 ? a.progress : -1
+        return { info: info, progress: progress, urgent: !!e.urgent }
+    }
 
     SequentialAnimation {
         id: bounceAnim
@@ -237,6 +338,14 @@ Item {
             NumberAnimation { target: ghost; property: "grow"; from: 1; to: 1.8; duration: 500 * cell.d; easing.type: Easing.OutQuad }
         }
         NumberAnimation { target: cell; property: "pulse"; to: 1; duration: 250 * cell.d; easing.type: Easing.OutBack }
+    }
+    NumberAnimation {
+        id: spinAnim
+        target: cell; property: "spin"; from: 0; to: 360; duration: 800 * cell.d; easing.type: Easing.InOutCubic
+    }
+    NumberAnimation {
+        id: waveAnim
+        target: cell; property: "wave"; from: 0; to: 1; duration: 900 * cell.d; easing.type: Easing.Linear
     }
     NumberAnimation {
         id: flipAnim
@@ -264,6 +373,8 @@ Item {
         case "flip": return flipAnim
         case "wobble": return wobbleAnim
         case "blink": return blinkAnim
+        case "rotate": return spinAnim
+        case "wave": return waveAnim
         }
         return null
     }
@@ -274,30 +385,44 @@ Item {
         a.restart()
     }
     function stopAll() {
-        for (const a of [bounceAnim, pulseAnim, flipAnim, wobbleAnim, blinkAnim]) {
+        for (const a of [bounceAnim, pulseAnim, flipAnim, wobbleAnim, blinkAnim, spinAnim, waveAnim]) {
             a.loops = 1
             a.complete()
         }
-        bounce = 0; pulse = 1; flip = 0; wobble = 0; blink = 1
+        bounce = 0; pulse = 1; flip = 0; wobble = 0; blink = 1; spin = 0; wave = 0
     }
     function playClick() { play(dock.v.clickAnimation, 1) }
 
     // Hover runs at most one animation, never on top of a launch/attention loop.
     function playHover() {
         if (loopState !== "") return
-        if (bounceAnim.running || pulseAnim.running || flipAnim.running || wobbleAnim.running || blinkAnim.running)
+        if (bounceAnim.running || pulseAnim.running || flipAnim.running || wobbleAnim.running || blinkAnim.running
+            || spinAnim.running || waveAnim.running)
             return
         play(dock.v.hoverAnimation, 1)
     }
 
     // Looping states: a launch in progress, a window asking for attention.
-    readonly property string loopState: launching ? "launch" : urgent ? "attention" : ""
+    readonly property string loopState: launching ? "launch" : (urgent || badge.urgent) ? "attention" : ""
     onLoopStateChanged: {
         stopAll()
         if (loopState === "launch") play(dock.v.launchAnimation, Animation.Infinite)
         else if (loopState === "attention") play(dock.v.attentionAnimation, Animation.Infinite)
     }
-    Component.onCompleted: if (loopState !== "") loopStateChanged()
+    Component.onCompleted: {
+        if (loopState !== "") loopStateChanged()
+        // Icons that join after start-up arrive with a transition effect.
+        if (dock.settled && kind === "app" && dock.v.appearEffect && dock.v.appearEffect !== "none")
+            appearFx.active = true
+    }
+
+    // The icon's place on screen in frame coordinates, for the effect that
+    // plays where it stood once it has been removed.
+    function iconRect() {
+        const w = s * sc * pulse
+        return Qt.rect(x + width / 2 - w / 2, iconY - bounce + s - w, w, w)
+    }
+    readonly property string iconSource: kind === "app" ? "image://icon/" + encodeURIComponent(icon) : ""
 
     Connections {
         target: dockModel

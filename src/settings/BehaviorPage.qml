@@ -21,7 +21,12 @@ SettingsPage {
     readonly property var animations: [
         { text: qsTr("Bounce"), value: "bounce" }, { text: qsTr("Pulse"), value: "pulse" },
         { text: qsTr("Flip"), value: "flip" }, { text: qsTr("Wobble"), value: "wobble" },
+        { text: qsTr("Wave"), value: "wave" }, { text: qsTr("Rotation"), value: "rotate" },
         { text: qsTr("Blink"), value: "blink" }, { text: qsTr("None"), value: "none" }]
+    readonly property var transitions: [
+        { text: qsTr("Evaporate"), value: "evaporate" }, { text: qsTr("Fade out"), value: "fade" },
+        { text: qsTr("Explode"), value: "explode" }, { text: qsTr("Break"), value: "break" },
+        { text: qsTr("Black hole"), value: "blackhole" }, { text: qsTr("None"), value: "none" }]
     // One toggle per fixed dock element: the launcher and each pinned app.
     readonly property var separatorChoices: {
         const items = [{ key: "launcher", label: qsTr("Launcher") }]
@@ -122,6 +127,14 @@ SettingsPage {
     SettingRow {
         title: qsTr("On hover")
         Choice { key: "hoverAnimation"; model: page.animations }
+    }
+    SettingRow {
+        title: qsTr("When an icon appears")
+        Choice { key: "appearEffect"; model: page.transitions }
+    }
+    SettingRow {
+        title: qsTr("When an icon is removed")
+        Choice { key: "removeEffect"; model: page.transitions }
     }
     SettingRow {
         title: qsTr("While an app starts")

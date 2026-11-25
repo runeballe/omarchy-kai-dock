@@ -8,6 +8,8 @@ Item {
     readonly property bool desklet: mode === "desklet"
     readonly property size deskletSize: Qt.size(300, 190)
     readonly property color accent: app ? app.accent : "#FFD60A"
+    // Text follows the theme, so light themes stay readable.
+    readonly property color fg: app ? app.color(config.theme.textColor, "#f2f2f2") : "#f2f2f2"
 
     readonly property string title: {
         translator.language
@@ -65,7 +67,7 @@ Item {
             width: parent.width * 0.1
             height: parent.height * 0.6
             radius: width / 2
-            color: Qt.rgba(1, 1, 1, 0.12)
+            color: Qt.rgba(applet.fg.r, applet.fg.g, applet.fg.b, 0.15)
             Rectangle {
                 anchors.bottom: parent.bottom
                 width: parent.width
@@ -94,8 +96,8 @@ Item {
                 Item {
                     width: parent.width
                     height: 18
-                    Text { text: modelData.label; color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 13 }
-                    Text { anchors.right: parent.right; text: modelData.value; color: "white"; font.pixelSize: 13; font.weight: Font.DemiBold }
+                    Text { text: modelData.label; color: Qt.rgba(applet.fg.r, applet.fg.g, applet.fg.b, 0.75); font.pixelSize: 13 }
+                    Text { anchors.right: parent.right; text: modelData.value; color: applet.fg; font.pixelSize: 13; font.weight: Font.DemiBold }
                 }
                 Graph {
                     width: parent.width
@@ -109,7 +111,7 @@ Item {
         Text {
             visible: system.temperature > 0
             text: qsTr("Temperature %1 °C").arg(Math.round(system.temperature))
-            color: Qt.rgba(1, 1, 1, 0.6)
+            color: Qt.rgba(applet.fg.r, applet.fg.g, applet.fg.b, 0.6)
             font.pixelSize: 12
         }
     }

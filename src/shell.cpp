@@ -208,6 +208,20 @@ void Shell::setDeskletLayer(QWindow *window, const QString &layer) {
         LayerShellQt::Window::get(window)->setLayer(layerFor(layer));
 }
 
+void Shell::setupLauncher(QWindow *window) {
+    if (!window || !layerShell())
+        return;
+    using W = LayerShellQt::Window;
+    auto *ls = W::get(window);
+    ls->setScope("kai-launcher");
+    ls->setWantsToBeOnActiveScreen(true);
+    ls->setLayer(W::LayerOverlay);
+    ls->setAnchors(W::Anchors(W::AnchorTop | W::AnchorBottom | W::AnchorLeft | W::AnchorRight));
+    ls->setExclusiveZone(-1);
+    ls->setKeyboardInteractivity(W::KeyboardInteractivityExclusive);
+    ls->setCloseOnDismissed(false);
+}
+
 void Shell::run(const QString &command) const {
     if (!command.trimmed().isEmpty())
         QProcess::startDetached("/bin/sh", {"-c", command});

@@ -78,11 +78,11 @@ Popup {
             height: 26
             background: Rectangle {
                 radius: Math.min(4, popup.app.radius + 4)
-                color: nav.hovered ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+                color: nav.hovered ? popup.tint(popup.app.color(popup.t.textColor, "#f2f2f2"), 0.2) : "transparent"
             }
             contentItem: Text {
                 text: nav.glyph
-                color: "#f2f2f2"
+                color: popup.app.color(popup.t.textColor, "#f2f2f2")
                 font.pixelSize: 13
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
@@ -92,7 +92,8 @@ Popup {
         Row {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 8
-            NavButton { glyph: "◀"; onClicked: popup.shift(-1) }            Text {
+            NavButton { glyph: "◀"; onClicked: popup.shift(-1) }
+            Text {
                 objectName: "calMonthLabel"
                 text: popup.monthLabel
                 color: popup.app.color(popup.t.textColor, "#f2f2f2")
@@ -121,8 +122,8 @@ Popup {
                     Text {
                         anchors.centerIn: parent
                         // standaloneDayShortName wants 1-based days matching firstDayOfWeek
-                        text: Qt.locale().standaloneDayName(((Qt.locale().firstDayOfWeek - 1 + parent.index) % 7) + 1, "short")
-                        color: Qt.rgba(1, 1, 1, 0.5)
+                        text: Qt.locale().standaloneDayName(((Qt.locale().firstDayOfWeek - 1 + parent.index) % 7) + 1, Locale.ShortFormat)
+                        color: popup.tint(popup.app.color(popup.t.textColor, "#f2f2f2"), 0.55)
                         font.pixelSize: 10
                     }
                 }

@@ -53,6 +53,7 @@ one click and fine-tune in a settings window.
 ```sh
 kai                       # start the dock, or open Settings if it's running
 kai settings              # open Settings
+kai apps                  # open or close the app launcher
 kai quit                  # stop the dock
 kai --software            # start with the CPU renderer this once
 kai theme list [--json]
@@ -66,6 +67,13 @@ To start kai with the desktop, add this to `~/.config/hypr/autostart.lua`:
 o.launch_on_start("kai")
 ```
 
+
+### Replacing an icon in the dock
+
+Drop `<icon-name>.svg` or `.png` into `~/.local/share/kai/icons/` to replace
+that icon in kai only; the system icon theme and other launchers are left
+alone. The icon name is the `Icon=` value from the app's `.desktop` file.
+
 ## Build
 
 Needs `qt6-base qt6-declarative qt6-wayland qt6-svg layer-shell-qt`.
@@ -74,6 +82,7 @@ Needs `qt6-base qt6-declarative qt6-wayland qt6-svg layer-shell-qt`.
 bin/build     # build/kai
 bin/test      # Qt Test suite, offscreen
 bin/install   # makepkg -fsi: installs kai, its icon and launcher entry
+bin/deploy    # build, test, install to ~/.local/bin and restart the running dock
 ```
 
 ## Theme format

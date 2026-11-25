@@ -79,7 +79,6 @@ private:
     Hyprland *m_hyprland;
     QList<DockItem> m_items;
     QHash<QString, qint64> m_launching;  // app id -> time the launch started
-    QHash<QString, QString> m_lastFocused; // app id -> address
     QTimer m_debounce;
     QTimer m_launchTimeout;
 };

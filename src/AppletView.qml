@@ -14,10 +14,13 @@ Loader {
         weather: "qrc:/applets/WeatherApplet.qml",
         sysmon: "qrc:/applets/SysmonApplet.qml",
         battery: "qrc:/applets/BatteryApplet.qml",
-        trash: "qrc:/applets/TrashApplet.qml"
+        trash: "qrc:/applets/TrashApplet.qml",
+        windowskiller: "qrc:/applets/WindowsKillerApplet.qml",
+        volume: "qrc:/applets/VolumeApplet.qml"
     })
-    source: sources[appletId] || ""
+    source: appletId.startsWith("script:") ? "qrc:/applets/ScriptApplet.qml" : (sources[appletId] || "")
     onLoaded: {
+        if (item.appletId !== undefined) item.appletId = Qt.binding(() => view.appletId)
         item.mode = Qt.binding(() => view.mode)
         item.app = Qt.binding(() => view.app)
         if (item.dock !== undefined) item.dock = Qt.binding(() => view.dock)
