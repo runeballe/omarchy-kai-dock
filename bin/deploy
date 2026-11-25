@@ -1,0 +1,55 @@
+#!/bin/sh
+# Builds kai, installs it to ~/.local/bin and restarts the running dock, so a
+# code change is on screen with one command. Stops before touching the
+# running dock if the build or the tests fail.
+#
+#   bin/deploy            build, test, install, restart
+#   bin/deploy --no-test  skip the test suite
+set -eu
+
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+TARGET="${KAI_INSTALL_PATH:-$HOME/.local/bin/kai}"
+
+say() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+fail() { printf '\033[1;31m==> %s\033[0m\n' "$*" >&2; exit 1; }
+
+say "Building"
+"$ROOT/bin/build" >/dev/null || fail "Build failed; the running dock was left alone."
+
+if [ "${1:-}" != "--no-test" ]; then
+    say "Testing"
+    "$ROOT/bin/test" >"$ROOT/build/test.log" 2>&1 \
+        || { tail -n 20 "$ROOT/build/test.log" >&2; fail "Tests failed; the running dock was left alone."; }
+    grep -E '^Totals' "$ROOT/build/test.log" || true
+fi
+
+say "Stopping the running dock"
+pkill -x kai 2>/dev/null || true
+# Wait for it to let go of its D-Bus name and socket before the new one starts.
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+    pgrep -x kai >/dev/null || break
+    sleep 0.2
+done
+pgrep -x kai >/dev/null && pkill -9 -x kai 2>/dev/null || true
+
+say "Installing to $TARGET"
+mkdir -p "$(dirname -- "$TARGET")"
+install -m755 "$ROOT/build/kai" "$TARGET"
+
+say "Starting kai"
+if command -v uwsm-app >/dev/null 2>&1 && [ -f "$HOME/.local/share/applications/kai.desktop" ]; then
+    setsid uwsm-app -- kai.desktop >/dev/null 2>&1 &
+else
+    setsid "$TARGET" >/dev/null 2>&1 &
+fi
+
+# The dock is up once its layer surface is mapped.
+for _ in $(seq 1 25); do
+    if hyprctl layers -j 2>/dev/null | grep -q '"kai-dock"'; then
+        say "kai is running (pid $(pgrep -x kai | head -n1))"
+        exit 0
+    fi
+    sleep 0.2
+done
+pgrep -x kai >/dev/null && { say "kai is running, but the dock hasn't appeared yet"; exit 0; }
+fail "kai didn't start; see: journalctl --user -n 30 | grep kai"

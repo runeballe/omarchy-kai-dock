@@ -82,6 +82,7 @@ Needs `qt6-base qt6-declarative qt6-wayland qt6-svg layer-shell-qt`.
 bin/build     # build/kai
 bin/test      # Qt Test suite, offscreen
 bin/install   # makepkg -fsi: installs kai, its icon and launcher entry
+bin/deploy    # build, test, install to ~/.local/bin and restart the running dock
 ```
 
 ## Theme format
