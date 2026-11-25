@@ -44,7 +44,17 @@ QPixmap IconProvider::requestPixmap(const QString &rawId, QSize *size, const QSi
         if (QFileInfo::exists(id))
             icon = QIcon(id);
     } else if (!id.isEmpty()) {
-        icon = QIcon::fromTheme(id);
+        // kai's own overrides come first: an icon dropped in
+        // ~/.local/share/kai/icons/<name>.svg|png replaces that icon in the
+        // dock only, without touching the system's icon theme.
+        const QString xdg = qEnvironmentVariable("XDG_DATA_HOME", QDir::homePath() + "/.local/share");
+        for (const QString ext : {".svg", ".png"})
+            if (QFileInfo::exists(xdg + "/kai/icons/" + id + ext)) {
+                icon = QIcon(xdg + "/kai/icons/" + id + ext);
+                break;
+            }
+        if (icon.isNull())
+            icon = QIcon::fromTheme(id);
         if (icon.isNull()) {
             for (const QString ext : {".svg", ".png", ".xpm"})
                 if (QFileInfo::exists("/usr/share/pixmaps/" + id + ext)) {

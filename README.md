@@ -67,6 +67,13 @@ To start kai with the desktop, add this to `~/.config/hypr/autostart.lua`:
 o.launch_on_start("kai")
 ```
 
+
+### Replacing an icon in the dock
+
+Drop `<icon-name>.svg` or `.png` into `~/.local/share/kai/icons/` to replace
+that icon in kai only; the system icon theme and other launchers are left
+alone. The icon name is the `Icon=` value from the app's `.desktop` file.
+
 ## Build
 
 Needs `qt6-base qt6-declarative qt6-wayland qt6-svg layer-shell-qt`.
